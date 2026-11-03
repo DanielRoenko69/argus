@@ -70,8 +70,12 @@ try {
   assert.deepEqual(requests, ['/api/__toolchain-smoke', '/console-assets/__toolchain-smoke']);
   console.log('Chat toolchain smoke passed: dev HTML, TSX, shared sidebar, API origin/host, brand proxy, built JS/CSS. No live API or model calls.');
 } finally {
+  // fetch keeps connections alive; drop them so every server can close.
+  for (const server of [dev?.httpServer, built?.httpServer, backend]) server?.closeAllConnections?.();
   await dev?.close();
   if (built) await built.close();
-  backend.closeAllConnections();
   await new Promise(resolveClose => backend.close(resolveClose));
 }
+// Vite's esbuild service can keep the event loop alive after close; the smoke
+// result is final here, so do not let a lingering helper hang CI.
+process.exit(process.exitCode ?? 0);
