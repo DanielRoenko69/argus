@@ -78,8 +78,10 @@ create the first account; that account becomes the platform administrator.
 Use a strong password and, for anything beyond local evaluation, configure an
 OIDC provider with MFA (see [oidc-sso-setup.md](oidc-sso-setup.md)).
 
-A fresh installation contains no users and no pre-built skills apart from the
-Workflow Copilot skills. The Docker installer adds eight provider-neutral
+A fresh installation contains no users. Its only pre-built skills are the
+Workflow Copilot skills and one editable assessment checklist per compliance
+framework (EU AI Act, NIS2, ISO/IEC 27001, DORA, SOC 2); the checklists support
+an evidence review and are not legal advice. The Docker installer adds eight provider-neutral
 starter agents (planner, coder, reviewer, knowledge, researcher, architect,
 compliance auditor, workflow copilot). They are preconfigured for the local
 LiteLLM/Ollama models that only the `everything` profile starts; with

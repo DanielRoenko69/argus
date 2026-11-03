@@ -445,6 +445,8 @@ test('fresh Argus install certifies auth, LLM, agent, public widget, RAG, connec
   const workflowCapabilities = new Map(a2aEvidence.workflows.map(workflow => [workflow.id, workflow.requiredBundleCategories]));
   expect(workflowCapabilities).toEqual(new Map([
     ['ticket-to-pull-request', ['repository', 'repository-checkout', 'ci']],
+    ['ticket-to-image-pull-request', ['repository', 'repository-checkout', 'ci']],
+    ['ticket-follow-up-image-pull-request', ['repository', 'repository-checkout', 'ci']],
     ['pull-request-review', ['repository', 'repository-checkout']],
     ['ci-failure-recovery', ['repository', 'repository-checkout', 'ci']],
     ['security-remediation', ['repository', 'repository-checkout', 'security']],
@@ -583,7 +585,7 @@ test('fresh Argus install certifies auth, LLM, agent, public widget, RAG, connec
   await expect(admin.getByRole('heading', { name: 'MCP Fabric', exact: true })).toBeVisible();
   await admin.getByRole('button', { name: 'Connector templates' }).click();
   const connectorCatalog = admin.getByRole('dialog', { name: 'Install governed connectors' });
-  await expect(connectorCatalog.getByText('50 connector blueprints')).toBeVisible();
+  await expect(connectorCatalog.getByText('51 connector blueprints')).toBeVisible();
   await connectorCatalog.getByPlaceholder('Search connectors and capabilities').fill('Prometheus');
   await connectorCatalog.getByRole('heading', { name: 'Prometheus', exact: true }).click();
   const prometheusBrand = connectorCatalog.getByRole('complementary').getByRole('img', { name: 'Prometheus logo' });
@@ -885,22 +887,17 @@ test('fresh Argus install certifies auth, LLM, agent, public widget, RAG, connec
   await expect(admin.getByRole('heading', { name: 'NIS2 Directive' })).toBeVisible();
   await expect(admin.getByRole('heading', { name: 'Evidence-backed service controls' })).toBeVisible();
   await expect(admin.getByText('Automated evidence is available', { exact: false })).toBeVisible();
-  const csvExport = await api<string>(admin, `/api/ui/compliance/runs/${complianceRunId}/export.csv`);
-  expect(csvExport.status).toBe(200);
-  expect(csvExport.text).toContain('report_hash');
-  expect(csvExport.text).toContain('Evidence-backed service controls');
-  const pdfExport = await admin.evaluate(async runId => {
-    const response = await fetch(`/api/ui/compliance/runs/${runId}/export.pdf`);
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    return {
-      status: response.status,
-      contentType: response.headers.get('content-type'),
-      signature: String.fromCharCode(...bytes.slice(0, 4)),
-      byteLength: bytes.byteLength,
-    };
-  }, complianceRunId);
-  expect(pdfExport).toMatchObject({ status: 200, contentType: 'application/pdf', signature: '%PDF' });
-  expect(pdfExport.byteLength).toBeGreaterThan(500);
+  // Compliance report downloads require a fresh provider-verified MFA
+  // assertion. A local password session never satisfies it, so both formats
+  // must redirect to the OIDC step-up instead of returning report content.
+  const reportExports = await admin.evaluate(async runId => Promise.all(['csv', 'pdf'].map(async format => {
+    const response = await fetch(`/api/ui/compliance/runs/${runId}/export.${format}`, { redirect: 'manual' });
+    return { format, type: response.type };
+  })), complianceRunId);
+  expect(reportExports).toEqual([
+    { format: 'csv', type: 'opaqueredirect' },
+    { format: 'pdf', type: 'opaqueredirect' },
+  ]);
 
   await expectApi(admin, '/api/admin/tools', 201, {
     method: 'POST',
@@ -1427,7 +1424,7 @@ test('fresh Argus install certifies auth, LLM, agent, public widget, RAG, connec
     expect.objectContaining({ graph_id: 'ci_failure_recovery', label: 'CI failure recovery' }),
     expect.objectContaining({ graph_id: 'security_remediation', label: 'Security remediation' }),
     expect.objectContaining({ graph_id: 'release_notes', label: 'Release notes' }),
-    expect.objectContaining({ graph_id: 'backlog_grooming', label: 'Backlog grooming' }),
+    expect.objectContaining({ graph_id: 'backlog_grooming', label: 'Backlog Planning' }),
   ]));
 
   const gitFabric = await expectApi<{
