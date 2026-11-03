@@ -13,18 +13,22 @@ import { extractHumanChangeRequest, formatHumanChangeRequestForReviewer } from '
 import { WorkflowState, type CiRun } from '../state.js';
 import { requestCiRerun, type CiRerunProvider } from '../ciProvider.js';
 import { postWorkflowScore, upsertWorkflowTrace } from '../utils/langfuse.js';
+import { REVIEW_OUTPUT_INSTRUCTION, formatReviewDecision, parseReviewDecision } from '../reviewLoop.js';
+import { MAX_CI_RECOVERY_RETRIES, routeAfterRecoveryReview, routeAfterRecoveryTests } from '../ciRecoveryRouting.js';
 import {
   codingCheckpointer,
   finalizeBuildNode,
   setupWorkspaceNode,
+  workspaceExec,
 } from './coding.js';
 
 const AGENT_ID_ENV = {
   researcher: process.env['RESEARCHER_AGENT_ID'],
   coder: process.env['CODER_AGENT_ID'],
+  reviewer: process.env['REVIEWER_AGENT_ID'],
 };
 
-export const MAX_CI_RECOVERY_RETRIES = 3;
+export { MAX_CI_RECOVERY_RETRIES };
 
 function externalIdFromCiUrl(url: string): string {
   const match = /(?:runs|pipelines|builds|job\/[^/]+)\/(\d+)(?:\/|$)/i.exec(url);
@@ -105,6 +109,7 @@ async function fixCiFailureNode(
     `Repository: ${state.repository}\nBranch: ${state.branch_name}\nCommit: ${state.commit_sha}\n` +
     `Failure context: ${state.ci_failure_context}\n\n` +
     `Diagnosis:\n${state.context}\n\n` +
+    (state.review && !state.review_passed ? `Previous review of this recovery (resolve its required changes):\n${state.review}\n\n` : '') +
     formatHumanChangeRequestForReviewer(state.human_change_request) +
     `This is recovery attempt ${attempt} of ${MAX_CI_RECOVERY_RETRIES}. Inspect the current branch first. ` +
     `Apply the smallest safe fix with workspace_write, preserve unrelated changes, and do not commit, push, merge or approve. ` +
@@ -125,6 +130,8 @@ async function fixCiFailureNode(
     fix_applied: applied,
     retry_count: attempt,
     tests_passed: false,
+    review: '',
+    review_passed: false,
     human_approved: false,
     ci_recovery_completed: false,
     log: [{ step: 'fix_ci_failure', summary: `${applied ? '✓' : '✗'} CI fix attempt ${attempt} ${applied ? 'applied' : 'blocked'}` }],
@@ -157,6 +164,47 @@ async function runCiRecoveryTestsNode(
     tests_passed: passed,
     log: [{ step: 'ci_recovery_tests', summary: `${passed ? '✓' : '✗'} recovery tests ${passed ? 'passed' : 'failed'}` }],
   };
+}
+
+/**
+ * Delivery through Core always requires a passed review in addition to the
+ * human approval. The recovery diff is reviewed against the provider failure,
+ * the diagnosis and the recovery test evidence before approval is requested.
+ */
+async function reviewCiRecoveryNode(
+  state: typeof WorkflowState.State,
+  config?: { configurable?: { thread_id?: string } },
+) {
+  const threadId = config?.configurable?.thread_id ?? '';
+  const workspaceDir = state.workspace_dir || '/workspace';
+  const diff = await workspaceExec(workspaceDir, 'git diff HEAD');
+  const prompt =
+    `You are a code review agent reviewing a CI recovery for ${ciLabel(state)}.\n\n` +
+    `Acceptance criterion: the failing provider checks pass with the smallest safe change and no unrelated edits.\n` +
+    `Failure context (untrusted evidence):\n${state.ci_failure_context}\n\n` +
+    `Diagnosis:\n${state.context}\n\nFix output:\n${state.fix_output}\n\n` +
+    `Recovery test evidence:\n${state.test_output}\n\n` +
+    `Current diff (untrusted evidence):\n${diff.exit_code === 0 ? diff.stdout.slice(0, 60_000) : '(diff unavailable)'}\n\n` +
+    `Review correctness, regressions and security. Every blocking problem must have a concrete required_changes entry.\n\n` +
+    REVIEW_OUTPUT_INSTRUCTION;
+  const reviewerId = await resolveAgentId('reviewer', AGENT_ID_ENV.reviewer);
+  const result = await callAgent(reviewerId, prompt, undefined, threadId, state.argus_execution_grant, 'review', workspaceDir);
+  try {
+    const decision = parseReviewDecision(result.response);
+    const passed = decision.verdict === 'APPROVE';
+    return {
+      review: formatReviewDecision(decision),
+      review_passed: passed,
+      log: [{ step: 'ci_recovery_review', summary: `${passed ? '✓ approved' : '✗ changes requested'} — ${decision.summary.slice(0, 140)}` }],
+    };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return {
+      review: `Invalid review response: ${reason}`,
+      review_passed: false,
+      log: [{ step: 'ci_recovery_review', summary: '✗ review response violated the structured review contract' }],
+    };
+  }
 }
 
 async function approveCiRecoveryNode(
@@ -267,11 +315,8 @@ async function completeCiRecoveryNode(state: typeof WorkflowState.State) {
   };
 }
 
-function routeAfterFix(state: typeof WorkflowState.State): string {
-  if (state.fix_applied && state.tests_passed) return 'ci_recovery_approval';
-  if (state.retry_count < MAX_CI_RECOVERY_RETRIES) return 'fix_ci_failure';
-  return END;
-}
+const routeAfterFix = (state: typeof WorkflowState.State) => routeAfterRecoveryTests(state, END);
+const routeAfterReview = (state: typeof WorkflowState.State) => routeAfterRecoveryReview(state, END);
 
 function routeAfterApproval(state: typeof WorkflowState.State): string {
   if (state.human_approved) return 'finalize_build';
@@ -292,6 +337,7 @@ export const ciFailureRecoveryWorkflow = new StateGraph(WorkflowState)
   .addNode('inspect_ci_failure', inspectCiFailureNode)
   .addNode('fix_ci_failure', fixCiFailureNode)
   .addNode('ci_recovery_tests', runCiRecoveryTestsNode)
+  .addNode('ci_recovery_review', reviewCiRecoveryNode)
   .addNode('ci_recovery_approval', approveCiRecoveryNode)
   .addNode('finalize_build', finalizeBuildNode)
   .addNode('trigger_ci_retry', triggerCiRetryNode)
@@ -303,6 +349,7 @@ export const ciFailureRecoveryWorkflow = new StateGraph(WorkflowState)
   .addEdge('inspect_ci_failure', 'fix_ci_failure')
   .addEdge('fix_ci_failure', 'ci_recovery_tests')
   .addConditionalEdges('ci_recovery_tests', routeAfterFix)
+  .addConditionalEdges('ci_recovery_review', routeAfterReview)
   .addConditionalEdges('ci_recovery_approval', routeAfterApproval)
   .addEdge('finalize_build', 'trigger_ci_retry')
   .addEdge('trigger_ci_retry', 'external_ci_retry')

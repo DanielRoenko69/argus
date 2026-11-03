@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Annotation, Command, END, MemorySaver, START, StateGraph, interrupt } from '@langchain/langgraph';
-import { CancellationUnconfirmedError, WorkflowCancellation, WorkflowCanceledError, assertWorkflowNotCanceled, confirmRuntimeStopped, registerWorkflowStop, runCooperatively, withWorkflowCancellation } from './workflowCancellation.js';
+import { CancellationUnconfirmedError, WorkflowCancellation, WorkflowCanceledError, assertWorkflowNotCanceled, confirmRuntimeStopped, hasPendingResult, registerWorkflowStop, runCooperatively, withWorkflowCancellation } from './workflowCancellation.js';
 
 const schema = Annotation.Root({ count: Annotation<number>({ reducer: (_a, b) => b, default: () => 0 }) });
 
@@ -107,4 +107,35 @@ test('runtime termination requires an exact terminal receipt, not a lost or malf
   }
   fake.mock.mockImplementation(async () => { throw new Error('lost response'); });
   await assert.rejects(confirmRuntimeStopped('http://fixture.invalid', '', 'codex', 'target'), CancellationUnconfirmedError);
+});
+
+test('a finished step with writes not yet checkpointed is applied instead of ending the run', async () => {
+  // LangGraph lists the completed task (with its result) but omits it from
+  // `next` until a checkpoint folds in its writes. That is not graph end.
+  const snapshots = [
+    { next: [], tasks: [{ result: { tests_passed: true }, interrupts: [] }], config: { configurable: { checkpoint_id: 'c4' } } },
+    { next: ['approval'], tasks: [{ interrupts: [] }], config: { configurable: { checkpoint_id: 'c5' } } },
+    { next: ['approval'], tasks: [{ interrupts: ['human approval'] }], config: { configurable: { checkpoint_id: 'c5' } } },
+  ];
+  let invokes = 0;
+  const result = await runCooperatively({ control: new WorkflowCancellation(), isCancellationRequested: async () => false,
+    invoke: async () => { invokes++; }, snapshot: async () => snapshots[invokes - 1]! });
+  assert.equal(invokes, 3);
+  assert.equal(result.tasks[0]?.interrupts?.length, 1);
+});
+
+test('pending writes that make no progress are returned instead of looping', async () => {
+  let invokes = 0;
+  const result = await runCooperatively({ control: new WorkflowCancellation(), isCancellationRequested: async () => false,
+    invoke: async () => { invokes++; },
+    snapshot: async () => ({ next: [] as string[], tasks: [{ result: { ok: true }, interrupts: [] }], config: { configurable: { checkpoint_id: 'c4' } } }) });
+  assert.equal(invokes, 2);
+  assert.deepEqual(result.next, []);
+});
+
+test('only completed, non-interrupted tasks count as uncommitted step results', () => {
+  assert.equal(hasPendingResult({ next: [], tasks: [] }), false);
+  assert.equal(hasPendingResult({ next: [], tasks: [{ interrupts: [] }] }), false);
+  assert.equal(hasPendingResult({ next: [], tasks: [{ result: { ok: true }, interrupts: ['approval'] }] }), false);
+  assert.equal(hasPendingResult({ next: [], tasks: [{ result: { ok: true }, interrupts: [] }] }), true);
 });

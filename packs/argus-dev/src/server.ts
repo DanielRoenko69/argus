@@ -18,7 +18,7 @@ import { decisionRequest, validateDecisionReply } from './developmentDecisions.j
 import { verifiedPlanningHandoff } from './planningHandoff.js';
 import { importRepositoryIssue, issueContext } from './repositoryIssue.js';
 import { followUpCheckpointFromSource } from './followUpContract.js';
-import { CancellationUnconfirmedError, WorkflowCancellation, runCooperatively } from './workflowCancellation.js';
+import { CancellationUnconfirmedError, WorkflowCancellation, hasPendingResult, runCooperatively } from './workflowCancellation.js';
 import { codingCheckpointer, resolveCiBaseCommit, fetchGitCreds, workspaceExec } from './workflows/coding.js';
 import { checkpointRetryNode, isStackSnapshotRecovery, isPreQaGrantRecovery, assertPreQaGrantTraces, assertCheckpointGrant, assertStoppedWorker, stoppedWorkerReceipt, workspaceRetryDigest, CheckpointRetryError, CHECKPOINT_PREDECESSOR, type RetryState } from './checkpointRetry.js';
 import { qaBasis } from './qaAcceptance.js';
@@ -881,6 +881,19 @@ async function finishRunFromSnapshot(
     return;
   }
 
+  // A finished step whose writes were not folded into a checkpoint is not a
+  // completed workflow. Fail with an explicit, resumable state instead of
+  // judging completion criteria against stale values.
+  if (snapshot && hasPendingResult(snapshot)) {
+    const pending = snapshot.tasks.filter(task => task.result !== undefined).map(task => task.name);
+    const message = `Workflow step ${pending.join(', ')} finished but its checkpoint was not committed. Continue from the last checkpoint; no step was replayed.`;
+    log('warn', 'workflow step left uncommitted writes', { run_id: runId, thread_id: thread.thread_id, checkpoint_id: checkpointId(snapshot), pending });
+    await markRunFinished(runId, thread.thread_id, 'failed', 'failed', message.slice(0, 4000));
+    await syncThreadA2aTask(thread.thread_id);
+    await notifyArgusTelemetry(thread, 'failed', undefined, message);
+    return;
+  }
+
   // The graph can finish its local work immediately after pushing a branch,
   // while the provider-owned CI pipeline is still asynchronous. Keep the
   // durable run open until the signed webhook supplies terminal evidence.
@@ -1162,7 +1175,7 @@ async function enqueueRun(threadId: string, kind: RunKind, payload: JsonObject):
     const retryableFailedCheckpoint = kind === 'continue'
       && row.status === 'failed'
       && checkpointId(snapshot) !== null
-      && (snapshot?.next.length ?? 0) > 0
+      && ((snapshot?.next.length ?? 0) > 0 || (snapshot !== null && hasPendingResult(snapshot)))
       && !hasInterrupt(snapshot);
     const recoverableQaResponse = kind === 'continue' && Boolean(payload['qaResponseRecovery'] || payload['qaRetry']) && row.status === 'interrupted';
     if (recoverableQaResponse) (payload['qaRetry'] ? prepareQaRetry : recheckQaResponse)({ ...serializeState(row, snapshot), values: { ...(snapshot?.values ?? {}) } } as unknown as RetryState);

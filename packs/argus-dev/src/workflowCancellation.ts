@@ -56,15 +56,33 @@ export function registerWorkflowStop(stop: () => Promise<void>): () => void {
   return context.getStore()?.register(stop) ?? (() => undefined);
 }
 
+type CooperativeSnapshot = {
+  next: readonly string[];
+  tasks?: readonly { interrupts?: readonly unknown[]; result?: unknown }[];
+  config?: { configurable?: { checkpoint_id?: unknown } };
+};
+
+const NO_CHECKPOINT = Symbol('no checkpoint');
+
+/** A completed task whose writes are not yet folded into a checkpoint. */
+export function hasPendingResult(snapshot: CooperativeSnapshot): boolean {
+  return snapshot.tasks?.some(task => task.result !== undefined && !(task.interrupts?.length)) ?? false;
+}
+
 /** Run one graph superstep at a time; never advance past an accepted cancel.
  * In-flight non-interruptible operations finish before a terminal receipt.
  * Real LangGraph human interrupts remain untouched.
+ *
+ * LangGraph omits finished tasks from `next` while their writes are still
+ * pending on the parent checkpoint, so an empty `next` alone does not prove
+ * the graph ended. Such a step is invoked again to apply its saved writes;
+ * a step that makes no progress is returned instead of looping.
  */
 export async function runCooperatively<T>(options: {
   control: WorkflowCancellation;
   isCancellationRequested: () => Promise<boolean>;
   invoke: (first: boolean) => Promise<void>;
-  snapshot: () => Promise<{ next: readonly string[]; tasks?: readonly { interrupts?: readonly unknown[] }[] } & T>;
+  snapshot: () => Promise<CooperativeSnapshot & T>;
   pollMs?: number;
 }): Promise<T> {
   const check = async () => {
@@ -84,13 +102,19 @@ export async function runCooperatively<T>(options: {
   try {
     return await withWorkflowCancellation(options.control, async () => {
       let first = true;
+      let stalledCheckpoint: unknown = NO_CHECKPOINT;
       while (true) {
         await check();
         await options.invoke(first);
         first = false;
         await check();
         const snapshot = await options.snapshot();
-        if (snapshot.next.length === 0 || snapshot.tasks?.some(task => (task.interrupts?.length ?? 0) > 0)) return snapshot;
+        if (snapshot.tasks?.some(task => (task.interrupts?.length ?? 0) > 0)) return snapshot;
+        if (snapshot.next.length > 0) continue;
+        if (!hasPendingResult(snapshot)) return snapshot;
+        const checkpoint = snapshot.config?.configurable?.checkpoint_id;
+        if (checkpoint === stalledCheckpoint) return snapshot;
+        stalledCheckpoint = checkpoint;
       }
     });
   } finally { clearInterval(timer); }
