@@ -1072,7 +1072,8 @@ describe('SolutionPackPage', () => {
     ]);
 
     expect(await screen.findByText('CI/CD waiting')).toBeVisible();
-    expect(screen.getByText('CI queued')).toBeVisible();
+    // The summary label renders before the runs load; wait for the run card.
+    expect(await screen.findByText('CI queued')).toBeVisible();
     expect(screen.getByRole('button', { name: /ARGUS-CI-1/ })).toHaveTextContent('CI in progress');
     expect(screen.getByRole('link', { name: 'Open Gitea CI' })).toHaveAttribute('href', 'http://localhost:3005/argus/actions/runs/42');
     expect(screen.getByText('awaiting approval')).toBeVisible();
