@@ -87,7 +87,9 @@ generates fresh random secrets for real installations.
 
 - Set strong, unique values for `SESSION_SECRET`, `DB_ENCRYPTION_KEY` and every
   `*_SECRET` variable; run with `NODE_ENV=production`.
-- Terminate TLS in front of Argus and expose only the Console/API port.
+- Terminate TLS in front of Argus and expose only the Console/API port. The
+  bundled Compose files bind PostgreSQL, Redis, LangGraph and the Solution Pack
+  ports to `127.0.0.1`; keep it that way.
 - Configure an OIDC provider with MFA for administrators; restrict local
   accounts to break-glass use.
 - If `OAUTH2_ENABLED=true`, set `OAUTH2_ISSUER` and `OAUTH2_AUDIENCE`.
