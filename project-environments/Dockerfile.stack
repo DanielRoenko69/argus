@@ -1,0 +1,17 @@
+FROM ubuntu:24.04@sha256:008173c23f95b170204355c12626cb5a965d779a7e1283b09e9cffbb1bf33ca3 AS base
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends bash ca-certificates curl git unzip python3 python3-venv python3-pytest \
+    && sed -i 's|http://|https://|g' /etc/apt/sources.list.d/ubuntu.sources \
+    && rm -rf /var/lib/apt/lists/* && mkdir /repo
+WORKDIR /repo
+
+FROM python:3.12-slim AS controller
+RUN pip install --no-cache-dir docker==7.1.0
+WORKDIR /app
+COPY stack_contract.py project_snapshot.py stack_output.py stack_runner.py workspace_session.py workspace_retirement.py workspace_database.py workspace_db.pg_hba.conf stack_recovery.py stack_startup.py stack_egress.py egress.py codegen_contract.py codegen_recovery.py test_stack.py test_stack_output.py test_stack_snapshot.py test_stack_recovery.py test_stack_startup.py certify_stack.py certify_stack_recovery.py certify_stack_startup.py ./
+CMD ["python3", "-u", "stack_runner.py"]
+
+FROM python:3.12-slim AS egress
+WORKDIR /app
+COPY egress.py stack_egress.py ./
+USER 1000:1000
+CMD ["python3", "-u", "stack_egress.py"]

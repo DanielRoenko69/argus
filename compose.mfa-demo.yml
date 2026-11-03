@@ -1,0 +1,65 @@
+# Local-only OIDC/MFA acceptance overlay.
+#
+# Start with `npm run demo:mfa:up`. The fixed credentials and TOTP seed are
+# deliberately scoped to this disposable demo realm and MUST NOT be reused in
+# production. Production deployments must bind Argus to their workforce IdP.
+services:
+  keycloak-mfa:
+    image: quay.io/keycloak/keycloak:26.7.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: argus-mfa-demo-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: argus-mfa-demo-admin-password
+      KC_HOSTNAME: http://localhost:${ARGUS_MFA_DEMO_PORT:-8180}
+      # Browser endpoints retain localhost while Gitea/Grafana use the private
+      # Compose address for token, userinfo and JWKS backchannel requests.
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+      JAVA_OPTS_KC_HEAP: "-XX:InitialRAMPercentage=20 -XX:MaxRAMPercentage=50"
+    ports:
+      - "127.0.0.1:${ARGUS_MFA_DEMO_PORT:-8180}:8080"
+    volumes:
+      - ./e2e/keycloak/argus-mfa-demo-realm.json:/opt/keycloak/data/import/argus-mfa-demo-realm.json:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          bash -c 'exec 3<>/dev/tcp/127.0.0.1/9000; printf "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3; grep -q "200 OK" <&3'
+      interval: 3s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+    mem_limit: 768m
+    restart: unless-stopped
+
+  mcp-server:
+    environment:
+      # Keep local password login as an explicit break-glass path. It never
+      # satisfies the provider-backed MFA boundary.
+      LOCAL_AUTH_ENABLED: "true"
+      OIDC_SSO_ENABLED: "true"
+      OIDC_PROVIDER_NAME: "Argus MFA Demo"
+      OIDC_ACCOUNT_MANAGEMENT_URL: http://localhost:${ARGUS_MFA_DEMO_PORT:-8180}/realms/argus-mfa-demo/account/#/account-security/signing-in
+      OIDC_ADMIN_CONSOLE_URL: http://localhost:${ARGUS_MFA_DEMO_PORT:-8180}/admin/master/console/#/argus-mfa-demo
+      OIDC_AUTHORIZATION_URL: http://localhost:${ARGUS_MFA_DEMO_PORT:-8180}/realms/argus-mfa-demo/protocol/openid-connect/auth
+      OIDC_TOKEN_URL: http://keycloak-mfa:8080/realms/argus-mfa-demo/protocol/openid-connect/token
+      OIDC_ISSUER: http://localhost:${ARGUS_MFA_DEMO_PORT:-8180}/realms/argus-mfa-demo
+      OIDC_JWKS_URI: http://keycloak-mfa:8080/realms/argus-mfa-demo/protocol/openid-connect/certs
+      OIDC_CLIENT_ID: argus-local-mfa
+      OIDC_CLIENT_SECRET: argus-local-mfa-client-secret
+      OIDC_REDIRECT_URI: http://localhost:${PORT:-3000}/auth/oidc/callback
+      OIDC_DEFAULT_ROLE: viewer
+      OIDC_GROUP_MAP: argus-platform-admins:platform_admin,argus-developers:developer
+      OIDC_EMERGENCY_LOCAL_ADMIN: "true"
+      OIDC_DISABLE_LOCAL_LOGIN: "false"
+      # This disposable realm requires TOTP for every workforce user. Its
+      # signed Keycloak ACR=1 therefore denotes that exact two-factor flow.
+      # Never copy this provider-specific mapping into production unchanged.
+      OIDC_MFA_AMR_VALUES: otp
+      OIDC_MFA_ACR_VALUES: "1"
+      OIDC_MFA_MAX_AGE_SECONDS: "600"
+      ARGUS_BACKEND_SSO_ENABLED: "true"
+      ARGUS_BACKEND_SSO_ALLOWED_ORIGINS: http://localhost:${GITEA_PORT:-3005},http://localhost:${ARGUS_GRAFANA_PORT:-3006},http://localhost:${ARGUS_JENKINS_PORT:-8081},http://localhost:${ARGUS_OPENSEARCH_DASHBOARDS_PORT:-5601}
+    depends_on:
+      keycloak-mfa:
+        condition: service_healthy

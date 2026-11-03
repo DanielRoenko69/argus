@@ -1,0 +1,2 @@
+ALTER TABLE mcp_api_keys
+  ADD COLUMN IF NOT EXISTS passthrough_url TEXT DEFAULT NULL;

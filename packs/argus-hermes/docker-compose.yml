@@ -1,0 +1,42 @@
+name: argus-hermes
+
+services:
+  argus-hermes:
+    image: ${ARGUS_HERMES_IMAGE:-argus-hermes:local}
+    build:
+      context: .
+    ports:
+      # The Pack is an internal control-plane service. Keep the local debug
+      # port loopback-only; Core reaches the container through its service name.
+      - "127.0.0.1:${ARGUS_HERMES_PORT:-2040}:2040"
+    environment:
+      NODE_ENV: production
+      PORT: 2040
+      ARGUS_HERMES_PUBLIC_URL: ${ARGUS_HERMES_PUBLIC_URL:-http://localhost:2040}
+      ARGUS_PACK_DISCOVERY_TOKEN: ${ARGUS_PACK_DISCOVERY_TOKEN:-}
+      ARGUS_PACK_DISCOVERY_TOKEN_FILE: ${ARGUS_PACK_DISCOVERY_TOKEN_FILE:-}
+      ARGUS_CORE_RUNTIME_MCP_ORIGIN: ${ARGUS_CORE_RUNTIME_MCP_ORIGIN:-}
+      # runnerd is intentionally a separate, operator-privileged service.
+      # Do not mount /var/run/docker.sock into this Pack.
+      ARGUS_HERMES_RUNNERD_URL: ${ARGUS_HERMES_RUNNERD_URL:-}
+      ARGUS_HERMES_RUNNERD_TOKEN: ${ARGUS_HERMES_RUNNERD_TOKEN:-}
+      ARGUS_HERMES_RUNNERD_TOKEN_FILE: ${ARGUS_HERMES_RUNNERD_TOKEN_FILE:-}
+      ARGUS_HERMES_MANAGED_STATE_DIRECTORY: ${ARGUS_HERMES_MANAGED_STATE_DIRECTORY:-/var/lib/argus-hermes}
+      ARGUS_HERMES_RUNNERD_POLL_MS: ${ARGUS_HERMES_RUNNERD_POLL_MS:-1000}
+      HERMES_BASE_URL: ${HERMES_BASE_URL:-}
+      HERMES_API_KEY_FILE: ${HERMES_API_KEY_FILE:-}
+      HERMES_REQUEST_TIMEOUT_MS: ${HERMES_REQUEST_TIMEOUT_MS:-5000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Contains only redacted lifecycle metadata; never an eg_v1 grant.
+      - argus-hermes-state:/var/lib/argus-hermes
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2040/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  argus-hermes-state:

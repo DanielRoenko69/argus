@@ -1,0 +1,23 @@
+# Browser-only HA certification overlay.
+#
+# The Playwright journey addresses every service over the Compose network, so
+# publishing fixture or Argus replica ports on the host is unnecessary. Reset
+# inherited ports to keep the release gate isolated from a developer's running
+# local stack and from fault-matrix labs that intentionally use ports 4000 and
+# 4100.
+
+services:
+  qdrant:
+    ports: !reset []
+
+  fake-openai:
+    ports: !reset []
+
+  fake-anthropic:
+    ports: !reset []
+
+  argus-a:
+    ports: !reset []
+
+  argus-b:
+    ports: !reset []

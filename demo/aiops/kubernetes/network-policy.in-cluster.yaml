@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: argus-kubernetes-connector-ingress
+  namespace: argus-aiops-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: argus-kubernetes-connector
+      app.kubernetes.io/name: argus-kubernetes-connector
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        # Argus Core receives this label in the in-cluster deployment overlay.
+        - podSelector:
+            matchLabels:
+              argus.eu/kubernetes-connector-client: "true"
+      ports:
+        - protocol: TCP
+          port: 8084

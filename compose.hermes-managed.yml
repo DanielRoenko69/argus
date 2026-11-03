@@ -1,0 +1,86 @@
+# Local Managed-Hermes prototype overlay.
+#
+# Prepare immutable images/policy first:
+#   npm run setup:hermes-managed:local -- --auth-volume argus-core_hermes-upstream-data --bundle-id <READ_ONLY_BUNDLE_ID>
+#
+# Then start the normal external Pack stack with the generated, git-ignored
+# environment file:
+#   docker compose --env-file .env --env-file .env.hermes-managed.local \
+#     -f docker-compose.yml -f compose.external-pack.yml \
+#     -f compose.hermes-attached.yml -f compose.hermes-local.yml \
+#     -f compose.hermes-managed.yml up -d
+#
+# The Docker socket is mounted only into runnerd. Core and the Pack never
+# receive container-engine authority, and spawned Hermes/proxy containers use
+# immutable digests from the generated attestation.
+
+services:
+  mcp-server:
+    environment:
+      ARGUS_RUNTIME_MCP_ORIGIN: http://mcp-server:3000
+      ARGUS_MANAGED_RUNTIME_READ_ONLY_BUNDLE_IDS: ${ARGUS_MANAGED_RUNTIME_READ_ONLY_BUNDLE_IDS:?An explicitly reviewed read-only Bundle ID is required}
+    networks:
+      default:
+      hermes-core-egress:
+
+  argus-hermes:
+    environment:
+      ARGUS_CORE_RUNTIME_MCP_ORIGIN: http://mcp-server:3000
+      ARGUS_HERMES_RUNNERD_URL: http://argus-hermes-runnerd:2042
+      ARGUS_HERMES_RUNNERD_TOKEN_FILE: /run/secrets/argus-hermes-runnerd-token
+    secrets:
+      - source: argus-hermes-runnerd-token
+        target: argus-hermes-runnerd-token
+        mode: 0444
+    depends_on:
+      argus-hermes-runnerd:
+        condition: service_healthy
+
+  argus-hermes-runnerd:
+    image: ${ARGUS_HERMES_RUNNERD_IMAGE:?Run setup:hermes-managed:local first}
+    user: "0:0"
+    command: ["node", "dist/runnerdServer.js"]
+    environment:
+      NODE_ENV: production
+      ARGUS_HERMES_RUNNERD_PORT: "2042"
+      ARGUS_HERMES_RUNNERD_TOKEN_FILE: /run/secrets/argus-hermes-runnerd-token
+      ARGUS_CORE_RUNTIME_MCP_ORIGIN: http://mcp-server:3000
+      ARGUS_HERMES_RUNNERD_STATE_DIRECTORY: /var/lib/argus-hermes-runnerd
+      ARGUS_HERMES_DOCKER_POLICY_FILE: /run/secrets/argus-hermes-docker-policy
+      ARGUS_HERMES_DOCKER_ATTESTATION_FILE: /run/secrets/argus-hermes-docker-attestation
+    secrets:
+      - source: argus-hermes-runnerd-token
+        target: argus-hermes-runnerd-token
+        mode: 0400
+      - source: argus-hermes-docker-policy
+        target: argus-hermes-docker-policy
+        mode: 0400
+      - source: argus-hermes-docker-attestation
+        target: argus-hermes-docker-attestation
+        mode: 0400
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - argus-hermes-runnerd-state:/var/lib/argus-hermes-runnerd
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2042/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+networks:
+  hermes-core-egress:
+    name: argus-core-egress-hermes
+    external: true
+
+volumes:
+  argus-hermes-runnerd-state:
+
+secrets:
+  argus-hermes-runnerd-token:
+    file: ${ARGUS_HERMES_RUNNERD_TOKEN_SOURCE_FILE:?Run setup:hermes-managed:local first}
+  argus-hermes-docker-policy:
+    file: ${ARGUS_HERMES_DOCKER_POLICY_SOURCE_FILE:?Run setup:hermes-managed:local first}
+  argus-hermes-docker-attestation:
+    file: ${ARGUS_HERMES_DOCKER_ATTESTATION_SOURCE_FILE:?Run setup:hermes-managed:local first}

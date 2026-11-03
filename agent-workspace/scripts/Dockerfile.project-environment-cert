@@ -1,0 +1,18 @@
+ARG BASE_IMAGE=argus-workspace:environment-cert-base
+FROM ${BASE_IMAGE}
+USER root
+ENV ARGUS_DISPOSABLE_ENVIRONMENT_CERT=true ARGUS_PROJECT_ENVIRONMENTS_ENABLED=true
+# Network is used only to prepare this disposable fixture image. The actual
+# installer/test certification runs with --network none and no real volumes.
+RUN mkdir -p /opt/argus-environments/wheels \
+ && /usr/bin/python3 -m pip --isolated --disable-pip-version-check install --no-deps --only-binary=:all: \
+    --target /opt/argus-environment-tools installer==0.7.0 packaging==25.0 \
+ && /usr/bin/python3 -m pip --isolated --disable-pip-version-check download \
+    --index-url https://pypi.org/simple --only-binary=:all: --no-deps \
+    --dest /opt/argus-environments/wheels \
+    pytest==8.3.5 packaging==25.0 iniconfig==2.1.0 pluggy==1.5.0
+COPY dist /app/dist
+COPY scripts/certify-project-environments.mjs /app/certify-project-environments.mjs
+RUN node /app/certify-project-environments.mjs --seed
+USER node
+ENTRYPOINT ["node", "/app/certify-project-environments.mjs"]

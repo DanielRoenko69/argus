@@ -1,0 +1,222 @@
+# Local-only workforce federation overlay.
+#
+# It proves that one Keycloak session can enter Argus, Gitea, Jenkins, Grafana
+# and OpenSearch Dashboards. Argus itself uses separate read-only service
+# identities for automation. Production deployments register equivalent
+# clients in their workforce IdP and keep TLS plus exact redirect/origin
+# policies enabled.
+services:
+  gitea:
+    environment:
+      # The base stack keeps public/self-service registration disabled. This
+      # overlay permits only IdP-proven identities to be provisioned by OAuth.
+      GITEA__oauth2_client__ENABLE_AUTO_REGISTRATION: "true"
+      GITEA__oauth2_client__USERNAME: preferred_username
+
+  mcp-server:
+    environment:
+      GITEA_PUBLIC_URL: http://localhost:${GITEA_PORT:-3005}
+      ARGUS_GRAFANA_PUBLIC_URL: http://localhost:${ARGUS_GRAFANA_PORT:-3006}
+      ARGUS_JENKINS_PUBLIC_URL: http://localhost:${ARGUS_JENKINS_PORT:-8081}
+      ARGUS_OPENSEARCH_DASHBOARDS_PUBLIC_URL: http://localhost:${ARGUS_OPENSEARCH_DASHBOARDS_PORT:-5601}
+      # The certification deliberately tests every managed connection plus
+      # individual read-only capabilities in one minute. Production keeps 30.
+      FABRIC_MUTATION_RATE_LIMIT_PER_MINUTE: "120"
+      ARGUS_JENKINS_SERVICE_TOKEN: ${ARGUS_JENKINS_SERVICE_TOKEN:-11a64f0e733bfa5da9d8bb312839476a1d}
+      JENKINS_CI_WEBHOOK_SECRET: ${JENKINS_CI_WEBHOOK_SECRET:-argus-local-jenkins-webhook-only}
+      ARGUS_OPENSEARCH_SERVICE_PASSWORD: ${ARGUS_OPENSEARCH_SERVICE_PASSWORD:-ArgusOpenSearchService42!}
+      SSRF_ALLOWLIST_HOSTS: gitea,langgraph,argus-dev,argus-aiops,prometheus,loki,jaeger,host.docker.internal,argus-aiops-control-plane,jenkins-sso,opensearch-sso,${SSRF_ALLOWLIST_HOSTS:-}
+
+  # LangGraph creates the pull request and persists its browser-facing URL in
+  # Dev run evidence. Pin the same loopback hostname as the workforce portals
+  # so an existing Keycloak/Gitea browser session remains valid.
+  langgraph:
+    environment:
+      GITEA_PUBLIC_URL: http://localhost:${GITEA_PORT:-3005}
+
+  grafana-sso:
+    profiles: ["backend-sso-demo"]
+    image: grafana/grafana:13.2.1@sha256:f772d434e8fab0049deb2b1b30abd43342bcfca1537614aa8d36080232cf4283
+    environment:
+      GF_SERVER_DOMAIN: localhost
+      GF_SERVER_ROOT_URL: http://localhost:${ARGUS_GRAFANA_PORT:-3006}
+      GF_SECURITY_ADMIN_USER: argus-break-glass
+      GF_SECURITY_ADMIN_PASSWORD: ${ARGUS_GRAFANA_BREAK_GLASS_PASSWORD:-ArgusGrafana42!}
+      GF_USERS_ALLOW_SIGN_UP: "true"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: Argus Workforce SSO
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
+      GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN: "true"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: argus-grafana
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: argus-grafana-client-secret
+      GF_AUTH_GENERIC_OAUTH_SCOPES: openid profile email
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: http://localhost:${ARGUS_MFA_DEMO_PORT:-8180}/realms/argus-mfa-demo/protocol/openid-connect/auth
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: http://keycloak-mfa:8080/realms/argus-mfa-demo/protocol/openid-connect/token
+      GF_AUTH_GENERIC_OAUTH_API_URL: http://keycloak-mfa:8080/realms/argus-mfa-demo/protocol/openid-connect/userinfo
+      GF_AUTH_GENERIC_OAUTH_USE_PKCE: "true"
+      GF_AUTH_GENERIC_OAUTH_LOGIN_ATTRIBUTE_PATH: preferred_username
+      GF_AUTH_GENERIC_OAUTH_NAME_ATTRIBUTE_PATH: name
+      GF_AUTH_GENERIC_OAUTH_EMAIL_ATTRIBUTE_PATH: email
+      GF_AUTH_GENERIC_OAUTH_GROUPS_ATTRIBUTE_PATH: groups
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: contains(groups[*], 'argus-platform-admins') && 'Admin' || contains(groups[*], 'argus-developers') && 'Editor' || 'Viewer'
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_STRICT: "true"
+    ports:
+      - "127.0.0.1:${ARGUS_GRAFANA_PORT:-3006}:3000"
+    volumes:
+      - grafana-sso-data:/var/lib/grafana
+      - ./demo/backend-sso/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./demo/backend-sso/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 4s
+      retries: 30
+      start_period: 20s
+    depends_on:
+      keycloak-mfa:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: '1.0'
+
+  jenkins-sso:
+    profiles: ["backend-sso-demo"]
+    image: ${ARGUS_JENKINS_IMAGE:-argus-core-jenkins-sso}
+    build:
+      context: ./demo/backend-sso/jenkins
+      dockerfile: Dockerfile
+    environment:
+      DOCKER_BUILDKIT: "1"
+      CASC_JENKINS_CONFIG: /usr/share/jenkins/ref/jenkins.yaml
+      JAVA_OPTS: -Djenkins.install.runSetupWizard=false -Xms256m -Xmx768m
+      PRE_CLEAR_INIT_GROOVY_D: "true"
+      GITEA_CLONE_ORIGIN: http://gitea:3000
+      GITEA_CLONE_USERNAME: ${GITEA_OWNER:-argus}
+      GITEA_CLONE_TOKEN: ${GITEA_TOKEN:?GITEA_TOKEN required}
+      # Keep the Jenkins service identity on the same operator-controlled
+      # credential as Argus Core and the idempotent backend seed. The init
+      # hook consumes this value without exposing it to the UI or build jobs.
+      ARGUS_JENKINS_SERVICE_TOKEN: ${ARGUS_JENKINS_SERVICE_TOKEN:-11a64f0e733bfa5da9d8bb312839476a1d}
+      ARGUS_JENKINS_CALLBACK_URL: http://mcp-server:3000/api/coding/webhook/ci/jenkins
+      JENKINS_CI_WEBHOOK_SECRET: ${JENKINS_CI_WEBHOOK_SECRET:-argus-local-jenkins-webhook-only}
+    ports:
+      - "127.0.0.1:${ARGUS_JENKINS_PORT:-8081}:8080"
+    volumes:
+      - ./demo/backend-sso/jenkins/jenkins.yaml:/usr/share/jenkins/ref/jenkins.yaml:ro
+      - ./demo/backend-sso/jenkins/init.groovy.d/10-argus-production-proof.groovy:/usr/share/jenkins/ref/init.groovy.d/10-argus-production-proof.groovy:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - "0"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /login HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3; grep -q "HTTP/1.1" <&3'
+      interval: 8s
+      timeout: 5s
+      retries: 45
+      start_period: 45s
+    depends_on:
+      keycloak-mfa:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  opensearch-sso:
+    profiles: ["backend-sso-demo"]
+    # 3.7 is deliberately pinned for the demo pair. The 3.8.0 Dashboards
+    # image published for linux/amd64 exits with a missing CLI artifact on
+    # Docker Desktop; keeping node and UI on one verified version is safer.
+    image: opensearchproject/opensearch:3.7.0@sha256:44ba7ea58a319adf61c33ab16873f9ef5dbb30b291a832d375172f0b2d24e3c9
+    environment:
+      discovery.type: single-node
+      cluster.name: argus-production-like
+      node.name: argus-opensearch-1
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${ARGUS_OPENSEARCH_ADMIN_PASSWORD:-Violet!Ridge7_Cedar#Orbit}
+      plugins.security.ssl.http.enabled: "false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "127.0.0.1:${ARGUS_OPENSEARCH_PORT:-9202}:9200"
+    volumes:
+      - ./demo/backend-sso/opensearch/config.yml:/usr/share/opensearch/config/opensearch-security/config.yml:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl -fsS -u admin:$${OPENSEARCH_INITIAL_ADMIN_PASSWORD} http://127.0.0.1:9200/_cluster/health >/dev/null
+      interval: 8s
+      timeout: 5s
+      retries: 45
+      start_period: 60s
+    depends_on:
+      keycloak-mfa:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+          cpus: '1.5'
+
+  opensearch-sso-init:
+    profiles: ["backend-sso-demo"]
+    image: opensearchproject/opensearch:3.7.0@sha256:44ba7ea58a319adf61c33ab16873f9ef5dbb30b291a832d375172f0b2d24e3c9
+    entrypoint: ["/bin/bash", "/opt/argus/init.sh"]
+    environment:
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${ARGUS_OPENSEARCH_ADMIN_PASSWORD:-Violet!Ridge7_Cedar#Orbit}
+      OPENSEARCH_SERVICE_PASSWORD: ${ARGUS_OPENSEARCH_SERVICE_PASSWORD:-ArgusOpenSearchService42!}
+    volumes:
+      - ./demo/backend-sso/opensearch/init.sh:/opt/argus/init.sh:ro
+    depends_on:
+      opensearch-sso:
+        condition: service_healthy
+    restart: "no"
+
+  opensearch-dashboards-sso:
+    profiles: ["backend-sso-demo"]
+    image: opensearchproject/opensearch-dashboards:3.7.0@sha256:1c9e0a50472123bd2cde615ffb7157ef436db794e082dba09e42c3a6d3ce91a3
+    ports:
+      - "127.0.0.1:${ARGUS_OPENSEARCH_DASHBOARDS_PORT:-5601}:5601"
+    volumes:
+      - ./demo/backend-sso/opensearch/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml:ro
+    healthcheck:
+      # /api/status is intentionally protected and returns 401 before login.
+      # The OIDC entry point returns 302 only after Dashboards and its auth
+      # plugin are ready, so it is the stronger unauthenticated liveness probe.
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1:5601/auth/openid/login"]
+      interval: 8s
+      timeout: 5s
+      retries: 45
+      start_period: 60s
+    depends_on:
+      keycloak-mfa:
+        condition: service_healthy
+      opensearch-sso:
+        condition: service_healthy
+      opensearch-sso-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: '1.0'
+
+volumes:
+  grafana-sso-data:

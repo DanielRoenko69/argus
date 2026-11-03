@@ -1,0 +1,28 @@
+# Docker-only local installer. It mounts the repository workspace and the
+# Docker socket so one disposable container can prepare machine-local secrets,
+# build the selected modules and start the real Argus Compose project.
+#
+# Usage:
+#   docker compose -f compose.install.yml run --rm --build install
+#   docker compose -f compose.install.yml run --rm install minimal
+#   docker compose -f compose.install.yml run --rm install optimal
+#   docker compose -f compose.install.yml run --rm install everything
+
+name: argus-installer
+
+services:
+  install:
+    build:
+      context: .
+      dockerfile: docker/installer.Dockerfile
+    environment:
+      ARGUS_INSTALLER_CORE_DIR: /workspace/argus-core
+      ARGUS_INSTALLER_PARENT_DIR: /workspace
+      # Compose project to create; override to run an isolated second stack.
+      ARGUS_COMPOSE_PROJECT: ${ARGUS_COMPOSE_PROJECT:-argus-core}
+    volumes:
+      - ..:/workspace
+      # The checkout directory may be named argus_core, argus-core or use any
+      # other local path. Keep the installer contract stable inside Docker.
+      - .:/workspace/argus-core
+      - /var/run/docker.sock:/var/run/docker.sock

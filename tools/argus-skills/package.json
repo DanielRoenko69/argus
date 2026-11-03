@@ -1,0 +1,14 @@
+{
+  "name": "argus-skills",
+  "version": "0.1.0",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "type": "module",
+  "description": "Zero-dependency CLI to sync curated Markdown skills into Argus.",
+  "bin": {
+    "argus-skills": "./argus-skills.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

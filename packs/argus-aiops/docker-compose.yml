@@ -1,0 +1,44 @@
+name: argus-aiops
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-argus_aiops}
+      POSTGRES_USER: ${POSTGRES_USER:-argus_aiops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-argus-aiops-local-only}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-argus_aiops} -d ${POSTGRES_DB:-argus_aiops}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  argus-aiops:
+    image: ${ARGUS_AIOPS_IMAGE:-argus-aiops:local}
+    build:
+      context: .
+    ports:
+      - "${ARGUS_AIOPS_PORT:-2030}:2030"
+    environment:
+      NODE_ENV: production
+      PORT: 2030
+      POSTGRES_CONNECTION_URL: postgresql://${POSTGRES_USER:-argus_aiops}:${POSTGRES_PASSWORD:-argus-aiops-local-only}@postgres:5432/${POSTGRES_DB:-argus_aiops}
+      ARGUS_URL: ${ARGUS_URL:-http://host.docker.internal:3000}
+      ARGUS_CORE_AGENT_TIMEOUT_MS: ${ARGUS_CORE_AGENT_TIMEOUT_MS:-900000}
+      ARGUS_A2A_PUBLIC_URL: ${ARGUS_A2A_PUBLIC_URL:-http://localhost:2030}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2030/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:

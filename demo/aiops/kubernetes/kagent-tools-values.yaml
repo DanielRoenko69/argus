@@ -1,0 +1,61 @@
+replicaCount: 1
+
+useDefaultServiceAccount: false
+
+tools:
+  loglevel: info
+  # Chart 0.2.1 otherwise renders the application and metrics ports twice as
+  # TCP/8084. Kubernetes 1.34 rejects that ambiguous container-port list.
+  metrics:
+    port: 8085
+  enabledTools:
+    - k8s
+  args:
+    # Application-layer protection. Write tools are not registered even if a
+    # future bundle policy is accidentally widened.
+    - --read-only
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 750m
+      memory: 384Mi
+  k8s:
+    # Local phase: use the dedicated namespaced ServiceAccount below. A later
+    # workload-identity phase can enable per-request token passthrough.
+    tokenPassthrough: false
+
+service:
+  type: NodePort
+  ports:
+    tools:
+      port: 8084
+      targetPort: 8084
+      nodePort: 30084
+
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+
+rbac:
+  create: true
+  # Never leave this empty: the chart otherwise creates cluster-scoped RBAC.
+  namespaces:
+    - argus-aiops-system
+    - argus-demo
+  readOnly: true
+  allowSecrets: false
+  additionalRules: []
+
+otel:
+  tracing:
+    enabled: false

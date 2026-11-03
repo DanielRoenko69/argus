@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://argus.eu/schemas/kubernetes-connector-contract-v1alpha1.json",
+  "title": "Argus Kubernetes connector certification contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "connectors.argus.eu/v1alpha1" },
+    "kind": { "const": "KubernetesConnectorCertification" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "targetId"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "targetId": { "type": "string", "minLength": 1 }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "platform", "context", "namespace", "workload", "endpoint", "scope", "identity", "security", "permissionAssertions"],
+      "properties": {
+        "profile": { "enum": ["in-cluster-read-only", "production"] },
+        "platform": { "enum": ["kubernetes", "aks", "eks", "gke", "openshift"] },
+        "context": { "type": "string", "minLength": 1 },
+        "namespace": { "type": "string", "minLength": 1 },
+        "workload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["deployment", "service", "serviceAccount", "container", "selector"],
+          "properties": {
+            "deployment": { "type": "string", "minLength": 1 },
+            "service": { "type": "string", "minLength": 1 },
+            "serviceAccount": { "type": "string", "minLength": 1 },
+            "container": { "type": "string", "minLength": 1 },
+            "selector": { "type": "object", "minProperties": 1, "additionalProperties": { "type": "string" } },
+            "expectedImageDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+          }
+        },
+        "endpoint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scheme", "host", "port", "path", "serviceType"],
+          "properties": {
+            "scheme": { "enum": ["http", "https"] },
+            "host": { "type": "string", "minLength": 1 },
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "path": { "type": "string", "pattern": "^/" },
+            "serviceType": { "const": "ClusterIP" }
+          }
+        },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["readNamespaces", "executionNamespaces", "readOnly", "allowSecrets"],
+          "properties": {
+            "readNamespaces": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+            "executionNamespaces": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+            "readOnly": { "const": true },
+            "allowSecrets": { "const": false }
+          }
+        },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kubernetes", "cloud"],
+          "properties": {
+            "kubernetes": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["mode", "maxTokenLifetimeSeconds"],
+              "properties": {
+                "mode": { "const": "projected-service-account-token" },
+                "maxTokenLifetimeSeconds": { "type": "integer", "minimum": 600, "maximum": 86400 }
+              }
+            },
+            "cloud": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["mode"],
+              "properties": {
+                "mode": { "enum": ["none", "aks-workload-identity", "eks-pod-identity", "gke-workload-identity", "openshift-service-account"] },
+                "clientId": { "type": "string", "format": "uuid" },
+                "tenantId": { "type": "string", "format": "uuid" },
+                "tokenAudience": { "type": "string", "minLength": 1 },
+                "tokenFile": { "type": "string", "pattern": "^/" },
+                "tokenExpirationSeconds": { "type": "integer", "minimum": 600, "maximum": 86400 },
+                "roleArn": { "type": "string", "pattern": "^arn:(aws|aws-us-gov|aws-cn):iam::[0-9]{12}:role/.+$" },
+                "credentialEndpoint": { "const": "http://169.254.170.23/v1/credentials" },
+                "metadataEndpoint": { "const": "http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token" },
+                "azure": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["clusterResourceGroup", "clusterName", "identityResourceGroup", "managedIdentityName", "federatedCredentialName"],
+                  "properties": {
+                    "subscriptionId": { "type": "string", "format": "uuid" },
+                    "clusterResourceGroup": { "type": "string", "minLength": 1 },
+                    "clusterName": { "type": "string", "minLength": 1 },
+                    "identityResourceGroup": { "type": "string", "minLength": 1 },
+                    "managedIdentityName": { "type": "string", "minLength": 1 },
+                    "federatedCredentialName": { "type": "string", "minLength": 1 }
+                  }
+                },
+                "aws": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["region", "clusterName", "roleName", "agentMode"],
+                  "properties": {
+                    "profile": { "type": "string", "minLength": 1 },
+                    "region": { "type": "string", "pattern": "^[a-z]{2}(-gov)?-[a-z]+-[0-9]+$" },
+                    "clusterName": { "type": "string", "minLength": 1 },
+                    "roleName": { "type": "string", "minLength": 1 },
+                    "agentMode": { "const": "addon" }
+                  }
+                },
+                "gcp": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["projectId", "projectNumber", "location", "clusterName", "clusterMode", "principalMode", "serviceAccountUid", "requiredRoles"],
+                  "properties": {
+                    "configuration": { "type": "string", "minLength": 1 },
+                    "projectId": { "type": "string", "pattern": "^[a-z][a-z0-9-]{4,28}[a-z0-9]$" },
+                    "projectNumber": { "type": "string", "pattern": "^[0-9]{6,32}$" },
+                    "location": { "type": "string", "minLength": 1 },
+                    "clusterName": { "type": "string", "minLength": 1 },
+                    "clusterMode": { "enum": ["standard", "autopilot"] },
+                    "principalMode": { "const": "service-account-uid" },
+                    "serviceAccountUid": { "type": "string", "format": "uuid" },
+                    "requiredRoles": {
+                      "type": "array",
+                      "minItems": 1,
+                      "uniqueItems": true,
+                      "items": { "type": "string", "pattern": "^roles/[A-Za-z0-9_.]+$" }
+                    }
+                  }
+                },
+                "openshift": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["clusterVersionName", "minimumVersion", "allowedSccs", "forbiddenSccs", "oauthClient", "exposeRoute", "servingCertificate"],
+                  "properties": {
+                    "clusterVersionName": { "const": "version" },
+                    "minimumVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+                    "allowedSccs": {
+                      "type": "array",
+                      "minItems": 1,
+                      "uniqueItems": true,
+                      "items": { "enum": ["restricted-v2", "restricted-v3"] }
+                    },
+                    "forbiddenSccs": {
+                      "const": ["anyuid", "hostaccess", "hostmount-anyuid", "hostnetwork", "node-exporter", "privileged"]
+                    },
+                    "oauthClient": { "const": false },
+                    "exposeRoute": { "const": false },
+                    "servingCertificate": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["secretName", "tlsContainer", "tlsImage", "mountPath", "targetPort"],
+                      "properties": {
+                        "secretName": { "type": "string", "minLength": 1 },
+                        "tlsContainer": { "type": "string", "minLength": 1 },
+                        "tlsImage": { "type": "string", "pattern": "^.+@sha256:[a-f0-9]{64}$" },
+                        "mountPath": { "type": "string", "pattern": "^/" },
+                        "targetPort": { "type": "integer", "minimum": 1024, "maximum": 65535 }
+                      }
+                    }
+                  }
+                }
+              },
+              "allOf": [
+                {
+                  "if": { "properties": { "mode": { "const": "aks-workload-identity" } } },
+                  "then": {
+                    "required": ["clientId", "tenantId", "tokenAudience", "tokenFile", "tokenExpirationSeconds", "azure"],
+                    "properties": {
+                      "tokenAudience": { "const": "api://AzureADTokenExchange" },
+                      "tokenFile": { "const": "/var/run/secrets/azure/tokens/azure-identity-token" }
+                    }
+                  }
+                },
+                {
+                  "if": { "properties": { "mode": { "const": "eks-pod-identity" } } },
+                  "then": {
+                    "required": ["roleArn", "tokenAudience", "tokenFile", "tokenExpirationSeconds", "credentialEndpoint", "aws"],
+                    "properties": {
+                      "tokenAudience": { "const": "pods.eks.amazonaws.com" },
+                      "tokenFile": { "const": "/var/run/secrets/pods.eks.amazonaws.com/serviceaccount/eks-pod-identity-token" },
+                      "tokenExpirationSeconds": { "const": 86400 },
+                      "credentialEndpoint": { "const": "http://169.254.170.23/v1/credentials" }
+                    }
+                  }
+                },
+                {
+                  "if": { "properties": { "mode": { "const": "gke-workload-identity" } } },
+                  "then": {
+                    "required": ["metadataEndpoint", "gcp"],
+                    "properties": {
+                      "metadataEndpoint": { "const": "http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token" }
+                    }
+                  }
+                },
+                {
+                  "if": { "properties": { "mode": { "const": "openshift-service-account" } } },
+                  "then": {
+                    "required": ["openshift"]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "security": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requireRestrictedIngress", "requireNetworkPolicyEnforcement", "networkPolicyProbe", "requireNonRoot", "requireReadOnlyRootFilesystem", "requireSeccompRuntimeDefault", "requireDropAllCapabilities", "requireReadinessProbe", "forbidClusterRoleBinding", "forbidLegacyServiceAccountToken"],
+          "properties": {
+            "requireRestrictedIngress": { "type": "boolean" },
+            "requireNetworkPolicyEnforcement": { "type": "boolean" },
+            "networkPolicyProbe": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["image", "healthPath", "timeoutSeconds", "stabilizationSeconds"],
+              "properties": {
+                "image": { "type": "string", "minLength": 1 },
+                "healthPath": { "type": "string", "pattern": "^/" },
+                "caFile": { "type": "string", "pattern": "^/" },
+                "timeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 30 },
+                "stabilizationSeconds": { "type": "integer", "minimum": 0, "maximum": 15 }
+              }
+            },
+            "requireNonRoot": { "type": "boolean" },
+            "requireReadOnlyRootFilesystem": { "type": "boolean" },
+            "requireSeccompRuntimeDefault": { "type": "boolean" },
+            "requireDropAllCapabilities": { "type": "boolean" },
+            "requireReadinessProbe": { "type": "boolean" },
+            "forbidClusterRoleBinding": { "type": "boolean" },
+            "forbidLegacyServiceAccountToken": { "type": "boolean" }
+          }
+        },
+        "permissionAssertions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["verb", "resource", "namespace", "allowed"],
+            "properties": {
+              "verb": { "type": "string", "minLength": 1 },
+              "resource": { "type": "string", "minLength": 1 },
+              "namespace": { "type": "string", "minLength": 1 },
+              "allowed": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

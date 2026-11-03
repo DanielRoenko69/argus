@@ -1,0 +1,10 @@
+# Operator-built candidate. The reviewed catalog and wheels come only from the
+# explicit preparation, not from a repository or an agent-generated command.
+ARG BASE_IMAGE=argus-workspace-project-env-base:20260928
+FROM ${BASE_IMAGE}
+USER root
+COPY demo/project-environments/gem-python312.catalog.json /opt/argus-environments/catalog.json
+COPY test-results/gem-environment-20260928/wheels/ /opt/argus-environments/wheels/
+RUN chmod -R a+rX /opt/argus-environments \
+ && chown -R root:root /opt/argus-environments
+USER node

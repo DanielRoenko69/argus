@@ -1,0 +1,149 @@
+# Local AIOps evidence lab. This overlay adds real metrics, logs and traces plus
+# a fail-closed, read-only MCP Bundle for Argus.AIOps.
+#
+# Preferred start (build, seed, registry reload and E2E verification):
+#   ./scripts/bootstrap-aiops-demo.ps1
+
+services:
+  mcp-server:
+    networks:
+      - default
+      # Private route to the Kind node's un-published remediation NodePort.
+      - argus-kind
+
+  aiops-checkout-metrics:
+    profiles: ["aiops-demo"]
+    image: node:20-alpine
+    command: ["node", "/demo/checkout-metrics.mjs"]
+    volumes:
+      - ./demo/aiops/checkout-metrics.mjs:/demo/checkout-metrics.mjs:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9464/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    restart: unless-stopped
+
+  prometheus:
+    profiles: ["aiops-demo"]
+    image: prom/prometheus:v3.13.2
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        umask 077
+        printf '%s' "$${ARGUS_PROMETHEUS_API_KEY%%,*}" > /run/argus/metrics-token
+        exec /bin/prometheus \
+          --config.file=/etc/prometheus/prometheus.yml \
+          --storage.tsdb.path=/prometheus \
+          --storage.tsdb.retention.time=24h \
+          --web.enable-lifecycle
+    environment:
+      ARGUS_PROMETHEUS_API_KEY: ${ARGUS_PROMETHEUS_API_KEY:-${MCP_API_KEYS:?MCP_API_KEYS required}}
+    ports:
+      - "127.0.0.1:${ARGUS_PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./demo/aiops/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    tmpfs:
+      # The official busybox image runs as `nobody` (65534). Keep the token
+      # writable only by that non-root process and resident in memory.
+      - /run/argus:size=1m,mode=0700,uid=65534,gid=65534
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    depends_on:
+      mcp-server:
+        condition: service_healthy
+      aiops-checkout-metrics:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: '1.0'
+
+  loki:
+    profiles: ["aiops-demo"]
+    image: grafana/loki:3.7.4
+    command: ["-config.file=/etc/loki/argus-local.yml"]
+    ports:
+      - "127.0.0.1:${ARGUS_LOKI_PORT:-3101}:3100"
+    volumes:
+      - ./demo/aiops/loki.yml:/etc/loki/argus-local.yml:ro
+    tmpfs:
+      - /loki:size=256m,mode=0750,uid=10001,gid=10001
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.75'
+
+  jaeger:
+    profiles: ["aiops-demo"]
+    # Jaeger v2 all-in-one: OTLP collector, query API/UI and an ephemeral
+    # in-memory trace store. Production installations can replace this
+    # provider without changing the Argus MCP contract.
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.20.0
+    ports:
+      - "127.0.0.1:${ARGUS_JAEGER_PORT:-16686}:16686"
+      - "127.0.0.1:${ARGUS_JAEGER_OTLP_HTTP_PORT:-4318}:4318"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.75'
+
+  aiops-signal-seed:
+    profiles: ["aiops-demo"]
+    image: node:20-alpine
+    environment:
+      LOKI_URL: http://loki:3100
+      JAEGER_OTLP_URL: http://jaeger:4318
+      JAEGER_QUERY_URL: http://jaeger:16686
+    command: ["node", "/seed/seed-signals.mjs"]
+    volumes:
+      - ./demo/aiops/seed-signals.mjs:/seed/seed-signals.mjs:ro
+    depends_on:
+      loki:
+        condition: service_started
+      jaeger:
+        condition: service_started
+    restart: "no"
+
+  aiops-demo-seed:
+    profiles: ["aiops-demo"]
+    image: postgres:16-alpine
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB:-aiops}
+      PGUSER: ${POSTGRES_USER:-aiops}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+    command: ["psql", "-v", "ON_ERROR_STOP=1", "-f", "/seed/seed.sql"]
+    volumes:
+      - ./demo/aiops/seed.sql:/seed/seed.sql:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mcp-server:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+      aiops-signal-seed:
+        condition: service_completed_successfully
+    restart: "no"
+
+volumes:
+  prometheus-data:
+
+networks:
+  argus-kind:
+    external: true
+    name: kind

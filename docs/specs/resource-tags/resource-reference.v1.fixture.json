@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "fixtureKind": "frozen-resource-reference",
+  "resource": {
+    "type": "workflow",
+    "id": "161",
+    "label": "GitHub issue triage to Slack",
+    "href": "/build/workflows/studio/161",
+    "version": "12",
+    "tags": [
+      { "id": "team-platform", "label": "Platform", "color": "#7c3aed" },
+      { "id": "env-dev", "label": "Development", "color": "#14b8a6" }
+    ],
+    "capturedAt": "2026-09-07T12:00:00.000Z"
+  }
+}

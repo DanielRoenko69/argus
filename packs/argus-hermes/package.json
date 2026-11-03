@@ -1,0 +1,28 @@
+{
+  "name": "@argus/hermes",
+  "version": "0.1.0",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "description": "Argus.Hermes solution pack: governed Hermes runtime bridge",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "start:mcp-proxy": "node dist/mcpAuthProxy.js",
+    "start:runnerd": "node dist/runnerdServer.js",
+    "test": "tsx --test src/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "verify:upstream-lock": "node scripts/check-upstream-release.mjs --offline",
+    "check:upstream": "node scripts/check-upstream-release.mjs",
+    "verify": "npm run typecheck && npm test && npm run verify:upstream-lock && npm run build"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,27 @@
+# LAST overlay for a source-built workstation. Build every image from this
+# repository instead of previously tagged local images.
+# This changes image/build selection only; all security/feature flags stay in
+# the reviewed Dev overlays.
+services:
+  mcp-server:
+    image: argus-core:workstation
+    build: .
+  argus-dev:
+    image: argus-dev:workstation
+    build: ./packs/argus-dev
+  argus-aiops:
+    image: argus-aiops:workstation
+    build: ./packs/argus-aiops
+  argus-hermes:
+    image: argus-hermes:workstation
+    build: ./packs/argus-hermes
+  agent-workspace:
+    image: argus-workspace:workstation
+  environment-resolver:
+    image: argus-environment-resolver:workstation
+  environment-egress:
+    image: argus-environment-egress:workstation
+  stack-runner:
+    image: argus-stack-controller:workstation
+  stack-egress:
+    image: argus-stack-egress:workstation

@@ -1,0 +1,57 @@
+.integration-workspace-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0 0 1.25rem;
+  padding: 0.35rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.integration-workspace-tabs a {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 0.45rem;
+  min-width: 150px;
+  min-height: 50px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 8px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.integration-workspace-tabs a > span {
+  color: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.integration-workspace-tabs a > small {
+  grid-column: 2;
+  overflow: hidden;
+  color: var(--text-subtle);
+  font-size: 0.67rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.integration-workspace-tabs a:hover,
+.integration-workspace-tabs a:focus-visible {
+  color: var(--text);
+  background: var(--surface-raised);
+}
+
+.integration-workspace-tabs a.is-active {
+  color: var(--violet);
+  background: var(--violet-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
+@media (max-width: 920px) {
+  .integration-workspace-tabs {
+    display: flex;
+  }
+}

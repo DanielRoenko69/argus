@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "kind": "aiops-service-profile-readiness",
+  "profileId": 41,
+  "revision": 3,
+  "profileSha256": "83983921347627b9c75c629e175e87fafd1b7229b7c62d02a8058e25204d3e6c",
+  "state": "degraded",
+  "generatedAt": "2026-09-08T10:05:00.000Z",
+  "lanes": [
+    {
+      "lane": "metrics",
+      "requirement": "required",
+      "state": "ready",
+      "bundleId": 11,
+      "bundleName": "argus-aiops-observe",
+      "providedCategories": ["metrics", "logs", "traces", "runtime", "topology"],
+      "toolNames": ["aiops_prometheus_query", "aiops_prometheus_query_range"],
+      "issueCodes": []
+    },
+    {
+      "lane": "traces",
+      "requirement": "required",
+      "state": "ready",
+      "bundleId": 11,
+      "bundleName": "argus-aiops-observe",
+      "providedCategories": ["metrics", "logs", "traces", "runtime", "topology"],
+      "toolNames": ["aiops_jaeger_find_traces", "aiops_jaeger_get_trace"],
+      "issueCodes": []
+    },
+    {
+      "lane": "logs",
+      "requirement": "optional",
+      "state": "missing",
+      "bundleId": 11,
+      "bundleName": "argus-aiops-observe",
+      "providedCategories": ["metrics", "traces", "runtime", "topology"],
+      "toolNames": [],
+      "issueCodes": ["optional_lane_missing"]
+    },
+    {
+      "lane": "changes",
+      "requirement": "optional",
+      "state": "ready",
+      "bundleId": 18,
+      "bundleName": "github-production",
+      "providedCategories": ["repository"],
+      "toolNames": ["github_list_commits"],
+      "issueCodes": []
+    }
+  ],
+  "runtime": {
+    "required": false,
+    "state": "not_required",
+    "scope": null,
+    "certification": null
+  },
+  "summary": {
+    "requiredLanes": 2,
+    "readyRequiredLanes": 2,
+    "optionalGaps": 1,
+    "blockingIssues": 0
+  },
+  "issues": [
+    {
+      "code": "optional_lane_missing",
+      "severity": "warning",
+      "message": "The optional logs lane does not expose an active read tool.",
+      "lane": "logs",
+      "bundleId": 11
+    }
+  ],
+  "recoveryActions": [
+    {
+      "id": "manage-logs-connection",
+      "label": "Manage logs connection",
+      "kind": "manage_connection",
+      "href": "/mcp-fabric?bundle=11"
+    }
+  ]
+}

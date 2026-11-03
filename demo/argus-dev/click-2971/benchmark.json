@@ -1,0 +1,31 @@
+{
+  "schema": "argus.dev-real-repository-acceptance.v1",
+  "id": "click-envvar-error-hint-2971",
+  "repository": {
+    "upstream": "https://github.com/pallets/click.git",
+    "local": "http://gitea:3000/argus/argus-dev-click-2971.git",
+    "sourceRef": "499bbeea64fbc251ece62188bcee185bfcec2316",
+    "defaultBranch": "main"
+  },
+  "upstreamEvidence": {
+    "issue": "https://github.com/pallets/click/issues/2971",
+    "acceptedPullRequest": "https://github.com/pallets/click/pull/2972",
+    "fixCommit": "1b0e19f50595a07957bd96a600c37cd44b7e0cc3"
+  },
+  "ticket": {
+    "id": "CLICK-2971",
+    "description": "Fix Click option error hints when show_envvar=True but no envvar is configured. Invalid or missing values for that option must not display (env var: 'None'). Preserve the existing hint for options with a real envvar. Add a focused regression test to tests/test_options.py, run the locked test suite, and stop at the governed human approval before any branch push or pull request."
+  },
+  "oracle": {
+    "requiredChangedFiles": [
+      "src/click/core.py",
+      "tests/test_options.py"
+    ],
+    "allowedAdditionalFiles": [
+      "CHANGES.rst"
+    ],
+    "targetedTestCommand": "uv run python -m pytest tests/test_options.py -q",
+    "fullTestCommand": "uv run python -m pytest -q",
+    "behaviorTest": "demo/argus-dev/click-2971/oracle_test.py"
+  }
+}

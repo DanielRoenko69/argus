@@ -1,0 +1,10 @@
+# Opt-in overlay for signed canonical audit evidence and automated reports.
+# Generate the private key first as documented in docs/INSTALLATION.md.
+services:
+  mcp-server:
+    environment:
+      ARGUS_AUDIT_EVIDENCE_V1_ENABLED: "true"
+      ARGUS_AUDIT_SIGNING_KEY_ID: ${ARGUS_AUDIT_SIGNING_KEY_ID:-local-audit-ed25519-v1}
+      ARGUS_AUDIT_SIGNING_PRIVATE_KEY_FILE: /run/secrets/argus-audit-signing-key
+    volumes:
+      - ./secrets/argus-audit-signing-key.pem:/run/secrets/argus-audit-signing-key:ro

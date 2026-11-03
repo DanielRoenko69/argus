@@ -1,0 +1,8 @@
+{
+  "node_version": "20",
+  "graphs": {
+    "coding_workflow": "./src/index.ts:codingWorkflow",
+    "pull_request_review": "./src/index.ts:pullRequestReviewWorkflow"
+  },
+  "env": ".env"
+}

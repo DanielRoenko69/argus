@@ -1,0 +1,8 @@
+**
+!test-results/
+!test-results/gem-environment-20260928/
+!demo/
+!demo/project-environments/
+!demo/project-environments/gem-python312.catalog.json
+!test-results/gem-environment-20260928/wheels/
+!test-results/gem-environment-20260928/wheels/*.whl

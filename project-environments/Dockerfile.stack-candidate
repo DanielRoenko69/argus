@@ -1,0 +1,9 @@
+# Local promotion of already compiled/tested code over the exact current image.
+# Runtime dependencies are unchanged. Production builds use the package Dockerfiles.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} AS workspace
+COPY agent-workspace/dist /app/dist
+
+FROM ${BASE_IMAGE} AS core
+COPY dist /app/dist
+COPY argus-console/dist /app/argus-console/dist

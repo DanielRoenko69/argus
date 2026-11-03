@@ -1,0 +1,42 @@
+{
+  "schema": "argus.dev-real-repository-acceptance.v1",
+  "id": "nestjs-dependency-resolution-race-4873",
+  "difficulty": "hard",
+  "repository": {
+    "upstream": "https://github.com/nestjs/nest.git",
+    "local": "http://gitea:3000/argus/argus-dev-nestjs-4873.git",
+    "sourceRef": "dffc1d07769b46e7b1dab850126da5d988deaf0d",
+    "defaultBranch": "main"
+  },
+  "upstreamEvidence": {
+    "issue": "https://github.com/nestjs/nest/issues/4873",
+    "acceptedPullRequest": "https://github.com/nestjs/nest/pull/15405",
+    "pullRequestHead": "a453b6375e429a2f0da5df0a6316ca82512ff4b8",
+    "fixCommit": "f704dcb628afd622b69e2434b2266d77e36afd6b"
+  },
+  "ticket": {
+    "id": "NEST-4873",
+    "description": "Fix the nondeterministic dependency-resolution race exposed while compiling testing modules with many global modules. A default-scoped dependant that consumes a transient useClass provider and a request-scoped useFactory provider from different modules must never observe a partially initialized dependency. Preserve existing circular-dependency and scope semantics, do not serialize all application bootstrap work globally, add focused regression coverage, run the relevant unit and integration tests, and stop at governed human approval before any branch push or pull request."
+  },
+  "expectedChangeSurface": {
+    "areas": [
+      "packages/core/injector",
+      "packages/testing",
+      "packages/core/helpers",
+      "integration/injector"
+    ],
+    "forbidden": [
+      "disabling parallel resolution",
+      "timing sleeps in production code",
+      "skipping or weakening existing tests"
+    ]
+  },
+  "oracle": {
+    "projectInstallCommand": "npm install --package-lock=false --legacy-peer-deps --ignore-scripts --no-audit --no-fund",
+    "targetedTestCommand": "npm exec -- mocha --require ts-node/register --require tsconfig-paths/register --require node_modules/reflect-metadata/Reflect.js --require hooks/mocha-init-hook.ts integration/injector/e2e/argus-race-oracle.spec.ts",
+    "projectTestCommand": "npm test -- --grep 'Injector|TestingInjector|Barrier'",
+    "buildCommand": "npm run build",
+    "behaviorTest": "demo/argus-dev/nestjs-4873/argus-race-oracle.spec.ts",
+    "temporaryTarget": "integration/injector/e2e/argus-race-oracle.spec.ts"
+  }
+}

@@ -1,0 +1,304 @@
+name: Argus CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: argus-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-quality:
+    name: Console quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    defaults:
+      run:
+        working-directory: argus-console
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: argus-console/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build console
+        run: npm run build
+
+      - name: Run console tests
+        run: npm test -- --run
+
+  chat-ui-quality:
+    name: Chat UI quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      matrix:
+        node: ['20.19.0', '24']
+
+    defaults:
+      run:
+        working-directory: argus-chat-ui
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use supported Chat Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: |
+            argus-chat-ui/package-lock.json
+            argus-console/package-lock.json
+
+      - name: Install shared console UI dependencies
+        working-directory: argus-console
+        run: npm ci
+
+      - name: Install chat UI dependencies
+        run: npm ci --engine-strict
+
+      - name: Audit Chat dependencies including build and test tools
+        run: npm audit --audit-level=moderate
+
+      - name: Build chat UI
+        run: npm run build
+
+      - name: Run chat UI tests
+        run: npm test -- --run
+
+      - name: Verify dev proxy and production asset routes without live services
+        run: npm run smoke:toolchain
+
+      - name: Verify workstation Node and Mac bootstrap contracts
+        working-directory: .
+        run: node --test scripts/check-chat-node.test.mjs
+
+  backend-quality:
+    name: Backend quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      POSTGRES_CONNECTION_URL: postgresql://aiops:aiops123@127.0.0.1:5432/aiops
+      DATABASE_URL: postgresql://aiops:aiops123@127.0.0.1:5432/aiops
+      POSTGRES_ENABLED: 'true'
+      POSTGRES_DB: aiops
+      POSTGRES_USER: aiops
+      POSTGRES_PASSWORD: aiops123
+      DB_ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      ARGUS_INSTALL_STARTER_AGENTS: 'false'
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: aiops
+          POSTGRES_USER: aiops
+          POSTGRES_PASSWORD: aiops123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U aiops -d aiops"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build backend
+        run: npm run build
+
+      - name: Initialize legacy-compatible schema
+        shell: bash
+        run: |
+          PGPASSWORD="$POSTGRES_PASSWORD" psql "$POSTGRES_CONNECTION_URL" \
+            -v ON_ERROR_STOP=1 -f db/init.sql
+
+      - name: Apply migrations to disposable PostgreSQL
+        shell: bash
+        env:
+          # Importing the migration runner also imports the application logger.
+          # Production mode keeps this one-shot process on synchronous stdout;
+          # the development pino-pretty worker would otherwise keep CI alive
+          # after every migration has already committed successfully.
+          NODE_ENV: production
+        run: |
+          node --input-type=module <<'NODE'
+          import pg from 'pg';
+          import { runPendingMigrations } from './dist/db/migrate.js';
+
+          const pool = new pg.Pool({ connectionString: process.env.POSTGRES_CONNECTION_URL });
+          try {
+            const report = await runPendingMigrations(pool, 'db/migrations');
+            if (report.failed.length > 0) {
+              console.error(JSON.stringify(report.failed, null, 2));
+              process.exitCode = 1;
+            }
+            console.log(`Applied ${report.applied.length} migrations.`);
+          } finally {
+            await pool.end();
+          }
+          NODE
+
+      - name: Run deterministic certification scripts
+        run: npm run test:scripts
+
+      - name: Run AIOps governance golden-path gate
+        run: npm run certify:aiops-governance
+
+      - name: Run complete Jest suite in bounded shards
+        run: npm run test:sharded
+
+  e2e:
+    name: Docker E2E release gate
+    needs: [backend-quality, frontend-quality, chat-ui-quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install runner dependencies
+        run: npm ci
+
+      - name: Run disposable Docker/Playwright certification
+        run: npm run test:e2e:local
+
+      - name: Run isolated signed Golden Path certification
+        run: npm run certify:golden-path
+
+      - name: Upload E2E evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-e2e-evidence
+          if-no-files-found: ignore
+          path: |
+            e2e/test-results/**
+            e2e/playwright-report/**
+            test-results/golden-path-certification.json
+
+  solution-packs:
+    name: Solution Pack quality gate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pack: [argus-dev, argus-aiops, argus-hermes]
+    defaults:
+      run:
+        working-directory: packs/${{ matrix.pack }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: packs/${{ matrix.pack }}/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test
+        run: npm test
+
+  security-reports:
+    name: Security and supply-chain reports (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare report directory
+        run: mkdir -p security-artifacts
+
+      - name: Gitleaks history scan
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            zricethezav/gitleaks:v8.24.2 detect \
+            --source=/repo --no-banner --redact \
+            --report-format sarif \
+            --report-path=/repo/security-artifacts/gitleaks.sarif \
+            --exit-code 1
+
+      - name: Semgrep security rules
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            semgrep/semgrep:1.85.0 semgrep scan \
+            --config=/repo/.semgrep/no-unprotected-routes.yml \
+            --sarif --output=/repo/security-artifacts/semgrep.sarif \
+            /repo/src /repo/packs
+
+      - name: Trivy filesystem scan
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            aquasec/trivy:0.58.1 fs \
+            --scanners vuln,secret \
+            --format sarif \
+            --output /repo/security-artifacts/trivy.sarif \
+            --exit-code 0 /repo
+
+      - name: Generate CycloneDX SBOM
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            anchore/syft:v1.18.1 \
+            dir:/repo -o cyclonedx-json=/repo/security-artifacts/sbom.cdx.json
+
+      - name: Upload security evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-security-evidence
+          if-no-files-found: warn
+          path: security-artifacts/**

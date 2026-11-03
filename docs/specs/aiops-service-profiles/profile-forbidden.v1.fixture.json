@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "kind": "aiops-service-profile-error",
+  "error": {
+    "code": "forbidden",
+    "message": "You are not allowed to activate AIOps service profiles.",
+    "requiredPermission": "aiops.service_profile.activate"
+  }
+}

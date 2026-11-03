@@ -1,0 +1,29 @@
+Argus
+Copyright the Argus authors.
+
+Argus is licensed under the GNU Affero General Public License, version 3
+(AGPL-3.0-only); see LICENSE.
+
+This repository contains third-party material under its own license terms:
+
+1. workflow-builder/
+   Derived from Sim Studio (https://github.com/simstudioai/sim),
+   licensed under the Apache License, Version 2.0.
+   Copyright Sim Studio AI contributors.
+   See workflow-builder/LICENSE and workflow-builder/NOTICE for the license
+   text and the list of Argus modifications. Per-file copyright headers are
+   preserved where code was ported verbatim.
+
+2. argus-console/public/brand/*.svg (integration marks)
+   Icon data from Simple Icons (https://simpleicons.org), CC0-1.0.
+   The logos remain trademarks of their respective owners. Their presence
+   does not imply certification, sponsorship or endorsement by those owners.
+   See argus-console/public/brand/README.md.
+
+3. packs/argus-hermes integrates the Hermes agent runtime
+   (https://github.com/NousResearch/hermes-agent). The runtime is pulled as a
+   container image at deployment time and is not included in this repository;
+   it remains under its own license.
+
+4. Dependencies installed through npm keep their own licenses as declared in
+   the respective package.json / package-lock.json files.

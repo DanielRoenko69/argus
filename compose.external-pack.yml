@@ -1,0 +1,174 @@
+# Run Argus Core together with the Solution Packs under packs/.
+#
+# Build the Pack images first (the Docker installer does this for you):
+#   docker build -t argus-dev:local ./packs/argus-dev
+#   docker build -t argus-aiops:local ./packs/argus-aiops
+#   docker build -t argus-hermes:local ./packs/argus-hermes
+# Then start the Core stack with:
+#   docker compose -f docker-compose.yml -f compose.external-pack.yml up -d
+
+services:
+  # The base Compose file keeps the in-repo runtime for backwards-compatible
+  # development. In this profile it is disabled so the external Pack owns the
+  # LangGraph port and service identity.
+  langgraph:
+    profiles:
+      - in-repo-pack
+
+  mcp-server:
+    # This is a file-path map, never a bearer-token map.  An operator may
+    # still supply the complete ARGUS_SOLUTION_PACK_TOKEN_FILES value for
+    # additional Packs; in that case it must retain the Hermes entry below.
+    environment:
+      LANGGRAPH_URL: http://argus-dev:2025
+      # Opt-in provider callback authentication; empty remains fail-closed.
+      JENKINS_CI_WEBHOOK_SECRET: ${JENKINS_CI_WEBHOOK_SECRET:-}
+      ARGUS_SOLUTION_PACK_ENDPOINTS: argus.dev=http://argus-dev:2025,argus.aiops=http://argus-aiops:2030,argus.hermes=http://argus-hermes:2040
+      ARGUS_SOLUTION_PACK_TOKEN_FILES: ${ARGUS_SOLUTION_PACK_TOKEN_FILES:-argus.hermes=/run/secrets/argus-hermes-discovery-token}
+      # Managed Hermes Runtime V1 is opt-in and fail-closed. Keeping either
+      # value empty leaves Core's managed-run coordinator unavailable. Do not
+      # add a default bundle ID here: each allowed ID must be explicitly
+      # reviewed as read-only by the operator. The current Hermes Pack still
+      # rejects starts until its isolated runner broker is installed.
+      # The origin is the internal Core URL visible to that future per-run
+      # MCP auth proxy, never a browser-derived Host or an external URL.
+      ARGUS_RUNTIME_MCP_ORIGIN: ${ARGUS_RUNTIME_MCP_ORIGIN:-}
+      ARGUS_MANAGED_RUNTIME_READ_ONLY_BUNDLE_IDS: ${ARGUS_MANAGED_RUNTIME_READ_ONLY_BUNDLE_IDS:-}
+    # The Hermes discovery credential is visible only to Core and the Hermes
+    # Pack. Docker mounts it as a read-only file; it is never an env value.
+    secrets:
+      - source: argus-hermes-discovery-token
+        target: argus-hermes-discovery-token
+        mode: 0444
+
+  argus-dev:
+    image: ${ARGUS_DEV_IMAGE:-argus-dev:local}
+    # Keep the external debug port distinct from the legacy in-repo runtime
+    # while both containers may still exist during the repository migration.
+    ports:
+      - "${ARGUS_DEV_PORT:-2026}:2025"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 2025
+      ARGUS_URL: http://mcp-server:3000
+      ARGUS_API_KEY: ${MCP_API_KEYS:?MCP_API_KEYS required}
+      ARGUS_A2A_PUBLIC_URL: ${ARGUS_A2A_PUBLIC_URL:-http://argus-dev:2025}
+      POSTGRES_CONNECTION_URL: postgresql://${POSTGRES_USER:-aiops}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@postgres:5432/${POSTGRES_DB:-aiops}
+      AGENT_WORKSPACE_URL: ${AGENT_WORKSPACE_URL:-http://agent-workspace:3001}
+      WORKSPACE_SECRET: ${WORKSPACE_SECRET:?WORKSPACE_SECRET required}
+      MAX_REVIEW_RETRIES: ${MAX_REVIEW_RETRIES:-4}
+      ARGUS_DEV_CODER_RUNTIME: ${ARGUS_DEV_CODER_RUNTIME:-argus}
+      ARGUS_DEV_TECHNICAL_DESIGN_ENABLED: ${ARGUS_DEV_TECHNICAL_DESIGN_ENABLED:-false}
+      ARGUS_TECHNICAL_EXPERIMENTS_ENABLED: ${ARGUS_TECHNICAL_EXPERIMENTS_ENABLED:-false}
+      ARGUS_CODEX_MODEL: ${ARGUS_CODEX_MODEL:-}
+      ARGUS_CODEX_REASONING_EFFORT: ${ARGUS_CODEX_REASONING_EFFORT:-high}
+      ARGUS_CODEX_TIMEOUT_SEC: ${ARGUS_CODEX_TIMEOUT_SEC:-900}
+      BITBUCKET_TOKEN: ${BITBUCKET_TOKEN:-}
+      BITBUCKET_BASE_URL: ${BITBUCKET_BASE_URL:-}
+      BITBUCKET_PROJECT_KEY: ${BITBUCKET_PROJECT_KEY:-}
+      BITBUCKET_USER_SLUG: ${BITBUCKET_USER_SLUG:-}
+      BITBUCKET_REPO_SLUG: ${BITBUCKET_REPO_SLUG:-}
+      BITBUCKET_TARGET_BRANCH: ${BITBUCKET_TARGET_BRANCH:-master}
+      ARGUS_CI_CANARIES_ENABLED: ${ARGUS_CI_CANARIES_ENABLED:-0}
+      ARGUS_CI_CANARIES_MIN_INTERVAL_MS: ${ARGUS_CI_CANARIES_MIN_INTERVAL_MS:-900000}
+      ARGUS_CI_CANARIES_TIMEOUT_MS: ${ARGUS_CI_CANARIES_TIMEOUT_MS:-15000}
+      ARGUS_CI_CANARY_TARGETS: ${ARGUS_CI_CANARY_TARGETS:-}
+      GITHUB_CI_TOKEN: ${GITHUB_CI_TOKEN:-}
+      GITLAB_CI_TOKEN: ${GITLAB_CI_TOKEN:-}
+      JENKINS_CI_TOKEN: ${JENKINS_CI_TOKEN:-}
+      # Explicit repository/job bindings only; no automatic dispatch by default.
+      ARGUS_JENKINS_DISPATCH_TARGETS: ${ARGUS_JENKINS_DISPATCH_TARGETS:-[]}
+      ARGUS_JENKINS_API_ORIGIN: ${ARGUS_JENKINS_API_ORIGIN:-}
+      ARGUS_JENKINS_PUBLIC_ORIGIN: ${ARGUS_JENKINS_PUBLIC_ORIGIN:-}
+      ARGUS_JENKINS_DISPATCH_USER: ${ARGUS_JENKINS_DISPATCH_USER:-}
+      ARGUS_JENKINS_DISPATCH_TOKEN: ${ARGUS_JENKINS_DISPATCH_TOKEN:-}
+      JENKINS_BUILD_URL: ${ARGUS_JENKINS_PUBLIC_URL:-http://localhost:${ARGUS_JENKINS_PORT:-8081}}/job/argus-dev-docker-golden-path/
+      GITEA_TOKEN: ${GITEA_TOKEN:-}
+      GITEA_BASE_URL: ${GITEA_BASE_URL:-http://gitea:3000}
+      GITEA_OWNER: ${GITEA_OWNER:-argus}
+      GITEA_REPO: ${GITEA_REPO:-argus-dev-sample}
+      GITEA_PUBLIC_URL: ${GITEA_PUBLIC_URL:-http://localhost:${GITEA_PORT:-3005}}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-http://langfuse:3100}
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2025/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mcp-server:
+        condition: service_healthy
+      agent-workspace:
+        condition: service_healthy
+
+  argus-aiops:
+    image: ${ARGUS_AIOPS_IMAGE:-argus-aiops:local}
+    ports:
+      - "${ARGUS_AIOPS_PORT:-2030}:2030"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 2030
+      ARGUS_URL: http://mcp-server:3000
+      # Subscription runtimes with multiple governed tool iterations may run
+      # longer than a direct provider completion. Core keeps its own bounded
+      # runtime timeout; the Pack must not abort the HTTP request first.
+      ARGUS_CORE_AGENT_TIMEOUT_MS: ${ARGUS_AIOPS_AGENT_TIMEOUT_MS:-900000}
+      ARGUS_A2A_PUBLIC_URL: ${ARGUS_AIOPS_A2A_PUBLIC_URL:-http://argus-aiops:2030}
+      POSTGRES_CONNECTION_URL: postgresql://${POSTGRES_USER:-aiops}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}@postgres:5432/${POSTGRES_DB:-aiops}
+      ARGUS_PACK_DISCOVERY_TOKEN_FILE: ${ARGUS_AIOPS_DISCOVERY_TOKEN_FILE:-}
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2030/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mcp-server:
+        condition: service_healthy
+
+  # Hermes is a Pack-owned runtime bridge, not another MCP backend. It remains
+  # intentionally unconfigured until an operator attaches an existing Hermes
+  # service or installs a managed runner profile.
+  argus-hermes:
+    image: ${ARGUS_HERMES_IMAGE:-argus-hermes:local}
+    ports:
+      - "127.0.0.1:${ARGUS_HERMES_PORT:-2040}:2040"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 2040
+      ARGUS_HERMES_PUBLIC_URL: ${ARGUS_HERMES_PUBLIC_URL:-http://argus-hermes:2040}
+      # Do not pass the host source path into the Pack. The only usable
+      # credential location is the Docker-secret target mounted below.
+      ARGUS_PACK_DISCOVERY_TOKEN_FILE: /run/secrets/argus-hermes-discovery-token
+      HERMES_BASE_URL: ${HERMES_BASE_URL:-}
+      HERMES_API_KEY_FILE: ${HERMES_API_KEY_FILE:-}
+      HERMES_REQUEST_TIMEOUT_MS: ${HERMES_REQUEST_TIMEOUT_MS:-5000}
+    secrets:
+      - source: argus-hermes-discovery-token
+        target: argus-hermes-discovery-token
+        mode: 0444
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2040/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      mcp-server:
+        condition: service_healthy
+
+# Required only by compose.external-pack.yml. The source file is local to the
+# operator and ignored by Git; Docker exposes it to exactly the two services
+# above at /run/secrets/argus-hermes-discovery-token.
+secrets:
+  argus-hermes-discovery-token:
+    file: ${ARGUS_HERMES_DISCOVERY_TOKEN_FILE:?ARGUS_HERMES_DISCOVERY_TOKEN_FILE must point to a readable Docker secret file}

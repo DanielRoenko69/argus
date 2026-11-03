@@ -1,0 +1,15 @@
+export const ep = {
+  me: () => '/api/me',
+  agents: () => '/api/agents',
+  allowedModels: (id: number) => `/api/agents/${id}/allowed-models`,
+  sessions: (id: number) => `/api/agents/${id}/sessions`,
+  session: (id: number, sid: string) => `/api/agents/${id}/sessions/${sid}`,
+  chat: (id: number, sid: string) => `/api/agents/${id}/sessions/${sid}/chat`,
+  regenerate: (id: number, sid: string) => `/api/agents/${id}/sessions/${sid}/regenerate`,
+  activeLeaf: (id: number, sid: string) => `/api/agents/${id}/sessions/${sid}/active-leaf`,
+  editMessage: (id: number, sid: string, msgId: string) => `/api/agents/${id}/sessions/${sid}/messages/${msgId}/edit`,
+  share: (_id: number, sid: string) => `/api/sessions/${sid}/share`,
+  myShares: () => '/api/me/shares',
+  revokeShare: (shareId: number) => `/api/shares/${shareId}`,
+  runtimeApproval: (id: string, decision: 'approve' | 'reject') => `/api/ui/governance/runtime-approvals/${encodeURIComponent(id)}/${decision}`,
+};

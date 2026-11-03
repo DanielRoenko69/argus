@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "kind": "argus.golden-path-preflight",
+  "mode": "certification",
+  "state": "ready",
+  "generatedAt": "2026-09-10T10:00:00.000Z",
+  "scope": {
+    "tenantKey": "design-partner-a",
+    "workspaceKey": "default",
+    "environment": "demo"
+  },
+  "targets": {
+    "git": {
+      "provider": "gitea",
+      "repository": "argus/golden-path-demo",
+      "issueNumber": 17,
+      "baseUrlOrigin": "http://gitea:3000",
+      "allowedOperations": ["comment", "add_label"],
+      "writeScopeSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "notification": {
+      "provider": "slack_fixture",
+      "destination": "argus-demo",
+      "allowedOperations": ["post_message"],
+      "writeScopeSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  },
+  "runtime": {
+    "preferred": "hermes",
+    "selected": "hermes",
+    "fallbackAllowed": true,
+    "profileId": "runtime-profile-hermes-demo",
+    "grantSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "workflow": {
+    "id": "golden-path-dev-triage",
+    "revision": "1",
+    "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "saved": true,
+    "agent": {
+      "id": "agent-dev-triage",
+      "revision": "3",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  },
+  "policy": {
+    "writeMode": "guarded",
+    "approvalRequired": true,
+    "separationOfDutiesRequired": true,
+    "policySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "writes": ["git_comment", "git_add_label", "slack_post_message"]
+  },
+  "checks": [
+    { "id": "core", "label": "Argus Core", "required": true, "state": "ready", "detail": "Core API and database are healthy." },
+    { "id": "argus_dev", "label": "Argus Dev", "required": true, "state": "ready", "detail": "The Dev pack is connected and ready." },
+    { "id": "runtime", "label": "Hermes runtime", "required": true, "state": "ready", "detail": "The selected runtime profile and grant are healthy." },
+    { "id": "mcp_git", "label": "Git provider", "required": true, "state": "ready", "detail": "The local Gitea bundle exposes only the required issue tools." },
+    { "id": "mcp_notification", "label": "Notification provider", "required": true, "state": "ready", "detail": "The deterministic Slack fixture is reachable." },
+    { "id": "workflow", "label": "Saved workflow", "required": true, "state": "ready", "detail": "Workflow and Agent revisions are immutable and available." },
+    { "id": "policy", "label": "Write policy", "required": true, "state": "ready", "detail": "External writes are scope-bound and approval-gated." },
+    { "id": "evidence", "label": "Evidence pipeline", "required": true, "state": "ready", "detail": "Trace, audit and report producers are available." }
+  ],
+  "allowedActions": ["start", "refresh"]
+}

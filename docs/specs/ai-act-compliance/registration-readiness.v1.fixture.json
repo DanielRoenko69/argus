@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "kind": "ai-system-registration-readiness",
+  "aiSystemId": "10000000-0000-4000-8000-000000000001",
+  "revisionId": "10000000-0000-4000-8000-000000000002",
+  "state": "controls_incomplete",
+  "generatedAt": "2026-09-09T09:15:00.000Z",
+  "evidenceCoverage": {
+    "applicable": 18,
+    "satisfied": 13,
+    "blocked": 2,
+    "notAssessed": 3,
+    "expiring": 1
+  },
+  "steps": [
+    {
+      "stepId": "identity",
+      "title": "System identity and owner",
+      "status": "complete",
+      "blocking": false,
+      "issues": [],
+      "action": null
+    },
+    {
+      "stepId": "intended_purpose",
+      "title": "Intended purpose and boundaries",
+      "status": "complete",
+      "blocking": false,
+      "issues": [],
+      "action": null
+    },
+    {
+      "stepId": "market_roles",
+      "title": "Provider and deployer responsibilities",
+      "status": "complete",
+      "blocking": false,
+      "issues": [],
+      "action": null
+    },
+    {
+      "stepId": "prohibited_practices",
+      "title": "Prohibited-practice screening",
+      "status": "complete",
+      "blocking": false,
+      "issues": [],
+      "action": null
+    },
+    {
+      "stepId": "classification",
+      "title": "Risk classification",
+      "status": "external_review_required",
+      "blocking": true,
+      "issues": ["External legal reviewer has not signed the current classification revision."],
+      "action": {
+        "label": "Request independent review",
+        "href": "/compliance/ai-systems/10000000-0000-4000-8000-000000000001/classification"
+      }
+    },
+    {
+      "stepId": "components",
+      "title": "Models, agents, workflows and tools",
+      "status": "complete",
+      "blocking": false,
+      "issues": [],
+      "action": null
+    },
+    {
+      "stepId": "controls",
+      "title": "Applicable control evidence",
+      "status": "blocked",
+      "blocking": true,
+      "issues": ["Restore drill is missing.", "External WORM anchor is not configured."],
+      "action": {
+        "label": "Resolve control gaps",
+        "href": "/compliance/ai-systems/10000000-0000-4000-8000-000000000001/controls"
+      }
+    },
+    {
+      "stepId": "independent_review",
+      "title": "Independent conformity review",
+      "status": "not_started",
+      "blocking": true,
+      "issues": ["The system is not ready for independent review."],
+      "action": null
+    }
+  ],
+  "customerResponsibilities": [
+    {
+      "responsibilityId": "customer-legal-classification",
+      "title": "Confirm the intended-purpose legal classification",
+      "ownerRole": "provider",
+      "status": "provided",
+      "dueAt": "2026-09-16T12:00:00.000Z"
+    },
+    {
+      "responsibilityId": "customer-operator-training",
+      "title": "Assign and train human oversight operators",
+      "ownerRole": "deployer",
+      "status": "open",
+      "dueAt": "2026-09-30T12:00:00.000Z"
+    }
+  ],
+  "allowedActions": ["edit_draft", "request_independent_review", "view_control_gaps"],
+  "claimBoundary": "Evidence coverage is not a legal conformity score. Release remains blocked until applicable controls and independent decisions are complete."
+}

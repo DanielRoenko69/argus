@@ -1,0 +1,58 @@
+replicaCount: 1
+
+useDefaultServiceAccount: false
+
+tools:
+  loglevel: info
+  metrics:
+    port: 8085
+  enabledTools:
+    - k8s
+  args:
+    - --read-only
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 750m
+      memory: 384Mi
+  k8s:
+    # The connector authenticates to Kubernetes with its dedicated, projected
+    # ServiceAccount token. Cloud workload identity is an independent overlay.
+    tokenPassthrough: false
+
+# Production-shaped endpoint: Core reaches this service from inside the
+# cluster. No NodePort, LoadBalancer or host binding is created.
+service:
+  type: ClusterIP
+  ports:
+    tools:
+      port: 8084
+      targetPort: 8084
+
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+
+rbac:
+  create: true
+  # Never leave this empty: the chart otherwise creates cluster-scoped RBAC.
+  namespaces:
+    - argus-aiops-system
+    - argus-demo
+  readOnly: true
+  allowSecrets: false
+  additionalRules: []
+
+otel:
+  tracing:
+    enabled: false

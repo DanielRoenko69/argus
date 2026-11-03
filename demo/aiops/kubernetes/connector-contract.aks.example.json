@@ -1,0 +1,85 @@
+{
+  "$schema": "./connector-contract.schema.json",
+  "apiVersion": "connectors.argus.eu/v1alpha1",
+  "kind": "KubernetesConnectorCertification",
+  "metadata": {
+    "name": "argus-aiops-aks-production",
+    "targetId": "argus-aiops-aks"
+  },
+  "spec": {
+    "profile": "production",
+    "platform": "aks",
+    "context": "argus-aiops-aks",
+    "namespace": "argus-aiops-system",
+    "workload": {
+      "deployment": "argus-kubernetes-connector",
+      "service": "argus-kubernetes-connector",
+      "serviceAccount": "argus-kubernetes-connector",
+      "container": "tools",
+      "selector": {
+        "app.kubernetes.io/instance": "argus-kubernetes-connector",
+        "app.kubernetes.io/name": "argus-kubernetes-connector"
+      },
+      "expectedImageDigest": "sha256:50b431281d3e32666f27a292962fd486aabaac157083a844d037c12137e353aa"
+    },
+    "endpoint": {
+      "scheme": "https",
+      "host": "argus-kubernetes-connector.argus-aiops-system.svc.cluster.local",
+      "port": 8443,
+      "path": "/mcp",
+      "serviceType": "ClusterIP"
+    },
+    "scope": {
+      "readNamespaces": ["argus-aiops-system", "argus-production"],
+      "executionNamespaces": ["argus-production"],
+      "readOnly": true,
+      "allowSecrets": false
+    },
+    "identity": {
+      "kubernetes": {
+        "mode": "projected-service-account-token",
+        "maxTokenLifetimeSeconds": 7200
+      },
+      "cloud": {
+        "mode": "aks-workload-identity",
+        "clientId": "11111111-1111-4111-8111-111111111111",
+        "tenantId": "22222222-2222-4222-8222-222222222222",
+        "tokenAudience": "api://AzureADTokenExchange",
+        "tokenFile": "/var/run/secrets/azure/tokens/azure-identity-token",
+        "tokenExpirationSeconds": 3600,
+        "azure": {
+          "subscriptionId": "33333333-3333-4333-8333-333333333333",
+          "clusterResourceGroup": "argus-platform-production",
+          "clusterName": "argus-aks-production",
+          "identityResourceGroup": "argus-platform-production",
+          "managedIdentityName": "argus-aiops-connector",
+          "federatedCredentialName": "argus-aiops-kubernetes-connector"
+        }
+      }
+    },
+    "security": {
+      "requireRestrictedIngress": true,
+      "requireNetworkPolicyEnforcement": true,
+      "networkPolicyProbe": {
+        "image": "docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10",
+        "healthPath": "/health",
+        "timeoutSeconds": 5,
+        "stabilizationSeconds": 0
+      },
+      "requireNonRoot": true,
+      "requireReadOnlyRootFilesystem": true,
+      "requireSeccompRuntimeDefault": true,
+      "requireDropAllCapabilities": true,
+      "requireReadinessProbe": true,
+      "forbidClusterRoleBinding": true,
+      "forbidLegacyServiceAccountToken": true
+    },
+    "permissionAssertions": [
+      { "verb": "get", "resource": "pods", "namespace": "argus-production", "allowed": true },
+      { "verb": "get", "resource": "pods/log", "namespace": "argus-production", "allowed": true },
+      { "verb": "delete", "resource": "pods", "namespace": "argus-production", "allowed": false },
+      { "verb": "get", "resource": "secrets", "namespace": "argus-production", "allowed": false },
+      { "verb": "get", "resource": "pods", "namespace": "kube-system", "allowed": false }
+    ]
+  }
+}

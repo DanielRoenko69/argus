@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "kind": "aiops-service-profile",
+  "id": 41,
+  "status": "active",
+  "activeRevision": {
+    "revision": 3,
+    "sha256": "83983921347627b9c75c629e175e87fafd1b7229b7c62d02a8058e25204d3e6c"
+  },
+  "latestRevision": {
+    "revision": 3,
+    "sha256": "83983921347627b9c75c629e175e87fafd1b7229b7c62d02a8058e25204d3e6c",
+    "config": {
+      "schemaVersion": 1,
+      "service": {
+        "displayName": "Checkout API",
+        "serviceName": "checkout-api",
+        "environment": "production",
+        "description": "Customer-facing checkout request path."
+      },
+      "ownership": {
+        "team": "payments-platform",
+        "escalationPolicyRef": "pagerduty:payments-primary",
+        "businessService": "online-checkout",
+        "criticality": "critical"
+      },
+      "evidencePolicy": {
+        "lanes": [
+          {
+            "lane": "metrics",
+            "requirement": "required",
+            "bundleId": 11,
+            "toolAllowlist": ["aiops_prometheus_query", "aiops_prometheus_query_range"],
+            "queryTemplates": [
+              {
+                "id": "checkout-error-rate",
+                "toolName": "aiops_prometheus_query_range",
+                "description": "Checkout HTTP 5xx rate in the incident window.",
+                "template": "sum(rate(http_server_requests_total{service_name=\"${service.name}\",environment=\"${environment}\",status_code=~\"5..\"}[5m]))"
+              }
+            ]
+          },
+          {
+            "lane": "traces",
+            "requirement": "required",
+            "bundleId": 11,
+            "toolAllowlist": ["aiops_jaeger_find_traces", "aiops_jaeger_get_trace"],
+            "queryTemplates": []
+          },
+          {
+            "lane": "logs",
+            "requirement": "optional",
+            "bundleId": 11,
+            "toolAllowlist": ["aiops_loki_query_range"],
+            "queryTemplates": [
+              {
+                "id": "checkout-errors",
+                "toolName": "aiops_loki_query_range",
+                "template": "{service_name=\"${service.name}\",environment=\"${environment}\"} |= \"error\""
+              }
+            ]
+          },
+          {
+            "lane": "changes",
+            "requirement": "optional",
+            "bundleId": 18,
+            "toolAllowlist": ["github_list_commits"],
+            "queryTemplates": []
+          }
+        ],
+        "minimumCollectedLanes": 2,
+        "correlationWindowMinutes": 30,
+        "maxProviderResultBytes": 65536
+      },
+      "selectors": {
+        "otelServiceNames": ["checkout-api"],
+        "metricLabels": {
+          "service_name": "checkout-api",
+          "environment": "production"
+        },
+        "logLabels": {
+          "service_name": "checkout-api",
+          "environment": "production"
+        },
+        "traceOperations": ["POST /checkout", "POST /payment/authorize"],
+        "repositories": [
+          {
+            "provider": "github",
+            "owner": "argus",
+            "repository": "checkout-api"
+          }
+        ]
+      },
+      "detection": {
+        "nativeAlertRuleIds": [17, 18],
+        "nativeSloIds": [6],
+        "providerMonitorRefs": ["datadog:monitor:8821"],
+        "autoInvestigate": true,
+        "cooldownMinutes": 30
+      },
+      "context": {
+        "knowledgeSourceIds": [4],
+        "runbookRefs": ["knowledge:checkout-api/incident-response"],
+        "dependencyOverrides": [
+          {
+            "targetKind": "service",
+            "targetName": "payment-api",
+            "relation": "calls",
+            "direction": "downstream",
+            "reason": "Checkout authorization depends on payment-api."
+          }
+        ]
+      },
+      "remediationPolicy": {
+        "mode": "propose",
+        "allowedAdapterKeys": [],
+        "maxRiskWithoutApproval": "none",
+        "requireApprovalInProduction": true,
+        "requireVerification": true,
+        "requireRollbackPlan": true
+      }
+    },
+    "createdAt": "2026-09-08T10:00:00.000Z",
+    "createdBy": {
+      "id": 7,
+      "username": "alex"
+    }
+  },
+  "tags": [
+    {
+      "id": "tier-1",
+      "label": "Tier 1",
+      "color": "#7c3aed"
+    },
+    {
+      "id": "payments",
+      "label": "Payments",
+      "color": "#14b8a6"
+    }
+  ],
+  "allowedActions": ["read", "edit", "validate", "pause", "clone", "investigate"],
+  "createdAt": "2026-09-08T09:30:00.000Z",
+  "updatedAt": "2026-09-08T10:00:00.000Z"
+}

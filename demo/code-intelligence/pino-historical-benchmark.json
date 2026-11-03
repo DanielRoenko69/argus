@@ -1,0 +1,285 @@
+{
+  "schema": "argus.code-intelligence-historical-benchmark.v1",
+  "id": "pino-historical-patches-2026-08",
+  "repository": {
+    "key": "pinojs/pino",
+    "url": "https://github.com/pinojs/pino.git",
+    "license": "MIT",
+    "licenseUrl": "https://github.com/pinojs/pino/blob/main/LICENSE"
+  },
+  "lockCommand": [
+    "npm",
+    "install",
+    "--package-lock-only",
+    "--ignore-scripts",
+    "--no-audit",
+    "--no-fund"
+  ],
+  "installCommand": [
+    "npm",
+    "ci",
+    "--ignore-scripts",
+    "--no-audit",
+    "--no-fund"
+  ],
+  "cases": [
+    {
+      "id": "pino-multistream-string-level",
+      "cohort": "pilot",
+      "category": "cross-file-runtime-bug",
+      "sourceUrl": "https://github.com/pinojs/pino/issues/1413",
+      "pullRequestUrl": "https://github.com/pinojs/pino/pull/2474",
+      "baseCommit": "ea99eee063c783964f51bf3ac2c2c2815263056e",
+      "fixCommit": "98d8fa4d95f1c759eb0dd6e4aca496a0eee31e25",
+      "ticket": "When a Pino source using a custom level formatter relays a string level label through the metadata protocol, multistream silently drops the record. Preserve numeric-level behavior and ensure an error record identified by the string label reaches every eligible destination. Add a focused regression test.",
+      "retrievalExpectedFiles": [
+        "lib/multistream.js",
+        "test/multistream.test.js"
+      ],
+      "goldChangedFiles": [
+        "lib/multistream.js",
+        "test/multistream.test.js"
+      ],
+      "oraclePaths": [
+        "test/multistream.test.js"
+      ],
+      "testCommand": [
+        "npm",
+        "exec",
+        "--offline",
+        "--",
+        "borp",
+        "--timeout",
+        "60000",
+        "test/multistream.test.js"
+      ]
+    },
+    {
+      "id": "pino-redaction-prototype-keys",
+      "cohort": "expansion",
+      "category": "security-regression",
+      "sourceUrl": "https://github.com/pinojs/pino/pull/2495",
+      "pullRequestUrl": "https://github.com/pinojs/pino/pull/2495",
+      "baseCommit": "e25dbbb65922aab8f4128abec08075e5d86900ed",
+      "fixCommit": "ab18ad9c32fa41ba04390f63b4a53e802ae829fb",
+      "ticket": "Creating a logger with redact paths beginning with caller-controlled keys such as constructor, toString, valueOf, hasOwnProperty or __proto__ must not throw or inherit behavior from Object.prototype. Treat those segments as ordinary data and add regression coverage.",
+      "retrievalExpectedFiles": [
+        "lib/redaction.js",
+        "test/redact.test.js"
+      ],
+      "goldChangedFiles": [
+        "lib/redaction.js",
+        "test/redact.test.js"
+      ],
+      "oraclePaths": [
+        "test/redact.test.js"
+      ],
+      "testCommand": [
+        "npm",
+        "exec",
+        "--offline",
+        "--",
+        "borp",
+        "--timeout",
+        "60000",
+        "test/redact.test.js"
+      ]
+    },
+    {
+      "id": "pino-serializer-prototype-keys",
+      "cohort": "expansion",
+      "category": "security-regression",
+      "sourceUrl": "https://github.com/pinojs/pino/pull/2457",
+      "pullRequestUrl": "https://github.com/pinojs/pino/pull/2457",
+      "baseCommit": "eff2b30ea52cb73ec683541972ae57b331626bdf",
+      "fixCommit": "e25dbbb65922aab8f4128abec08075e5d86900ed",
+      "ticket": "Logging objects parsed from untrusted JSON must handle own keys named __proto__, constructor and toString as plain data. The logger must neither crash nor serialize those values differently because similarly named inherited properties exist. Cover serializer, stringifier and no-redact paths.",
+      "retrievalExpectedFiles": [
+        "lib/tools.js",
+        "pino.js",
+        "test/basic.test.js"
+      ],
+      "goldChangedFiles": [
+        "lib/tools.js",
+        "pino.js",
+        "test/basic.test.js"
+      ],
+      "oraclePaths": [
+        "test/basic.test.js"
+      ],
+      "testCommand": [
+        "npm",
+        "exec",
+        "--offline",
+        "--",
+        "borp",
+        "--timeout",
+        "60000",
+        "test/basic.test.js"
+      ]
+    },
+    {
+      "id": "pino-browser-set-bindings",
+      "cohort": "expansion",
+      "category": "api-parity",
+      "sourceUrl": "https://github.com/pinojs/pino/pull/2471",
+      "pullRequestUrl": "https://github.com/pinojs/pino/pull/2471",
+      "baseCommit": "cefb92aa955911399f95c20f6d6b6b4960141a92",
+      "fixCommit": "d514a8a1119fd4fa1d55d80022336c1329f9b292",
+      "ticket": "Bring the browser logger's bindings API in line with the server logger by supporting setBindings. Updated bindings must be visible to subsequent log calls without corrupting child logger isolation, transmit output or existing bindings behavior. Add browser-focused tests.",
+      "retrievalExpectedFiles": [
+        "browser.js"
+      ],
+      "goldChangedFiles": [
+        "browser.js",
+        "test/browser-set-bindings.test.js"
+      ],
+      "oraclePaths": [
+        "test/browser-set-bindings.test.js"
+      ],
+      "testCommand": [
+        "npm",
+        "exec",
+        "--offline",
+        "--",
+        "borp",
+        "--timeout",
+        "60000",
+        "test/browser-set-bindings.test.js"
+      ]
+    },
+    {
+      "id": "pino-child-binding-key-escaping",
+      "cohort": "expansion",
+      "category": "serialization-bug",
+      "sourceUrl": "https://github.com/pinojs/pino/pull/2452",
+      "pullRequestUrl": "https://github.com/pinojs/pino/pull/2452",
+      "baseCommit": "98d8fa4d95f1c759eb0dd6e4aca496a0eee31e25",
+      "fixCommit": "44f983e0a52b9867298520246d87da4b21099fa7",
+      "ticket": "Child logger binding keys may contain quotes, backslashes and other characters requiring JSON escaping. Logging with such bindings must always produce valid JSON whose parsed key and value exactly match the caller input. Add a regression test without changing ordinary binding output.",
+      "retrievalExpectedFiles": [
+        "lib/tools.js",
+        "test/escaping.test.js"
+      ],
+      "goldChangedFiles": [
+        "lib/tools.js",
+        "test/escaping.test.js"
+      ],
+      "oraclePaths": [
+        "test/escaping.test.js"
+      ],
+      "testCommand": [
+        "npm",
+        "exec",
+        "--offline",
+        "--",
+        "borp",
+        "--timeout",
+        "60000",
+        "test/escaping.test.js"
+      ]
+    },
+    {
+      "id": "pino-single-target-level-filter",
+      "cohort": "expansion",
+      "category": "cross-file-runtime-bug",
+      "sourceUrl": "https://github.com/pinojs/pino/pull/2432",
+      "pullRequestUrl": "https://github.com/pinojs/pino/pull/2432",
+      "baseCommit": "7b2fee8700cb4ecab0d55dbe831d60b60fc16929",
+      "fixCommit": "ea99eee063c783964f51bf3ac2c2c2815263056e",
+      "ticket": "A transport configured through a one-element targets array must honor that target's level filter exactly as a multi-target transport does. Messages below the target level must not reach the worker, while eligible records must remain unchanged. Add focused transport coverage.",
+      "retrievalExpectedFiles": [
+        "lib/transport.js",
+        "lib/worker.js",
+        "test/transport/core.test.js"
+      ],
+      "goldChangedFiles": [
+        "lib/transport.js",
+        "lib/worker.js",
+        "test/transport/core.test.js"
+      ],
+      "oraclePaths": [
+        "test/transport/core.test.js"
+      ],
+      "testCommand": [
+        "npm",
+        "exec",
+        "--offline",
+        "--",
+        "borp",
+        "--timeout",
+        "60000",
+        "test/transport/core.test.js"
+      ]
+    },
+    {
+      "id": "pino-worker-node-options",
+      "cohort": "expansion",
+      "category": "process-boundary-bug",
+      "sourceUrl": "https://github.com/pinojs/pino/pull/2391",
+      "pullRequestUrl": "https://github.com/pinojs/pino/pull/2391",
+      "baseCommit": "6a8e5984cfe5f6db4514be0565602c74b6975ec3",
+      "fixCommit": "f1203e6c2ba2e9c69124c7e88cdb19d8d6fcfdf9",
+      "ticket": "Starting a transport worker must remain reliable when NODE_OPTIONS contains preload or import arguments that are valid for the parent process but rejected by worker_threads. Remove only worker-incompatible preload values, retain unrelated valid options, and cover the supported syntax variants and failure boundaries.",
+      "retrievalExpectedFiles": [
+        "lib/transport.js",
+        "test/transport/preload.test.js"
+      ],
+      "goldChangedFiles": [
+        "lib/transport.js",
+        "test/fixtures/transport-invalid-node-options.js",
+        "test/transport/node-options.test.js",
+        "test/transport/preload.test.js"
+      ],
+      "oraclePaths": [
+        "test/fixtures/transport-invalid-node-options.js",
+        "test/transport/node-options.test.js",
+        "test/transport/preload.test.js"
+      ],
+      "testCommand": [
+        "npm",
+        "exec",
+        "--offline",
+        "--",
+        "borp",
+        "--timeout",
+        "60000",
+        "test/transport/node-options.test.js",
+        "test/transport/preload.test.js"
+      ]
+    },
+    {
+      "id": "pino-multistream-clone-contract",
+      "cohort": "held-out",
+      "category": "api-regression",
+      "sourceUrl": "https://github.com/pinojs/pino/pull/2493",
+      "pullRequestUrl": "https://github.com/pinojs/pino/pull/2493",
+      "baseCommit": "e63966d01126d4c7d0d5d2f0783ddc7a5fd52451",
+      "fixCommit": "b394c2c16ac6a8919cd33d7f5684a01baca1096f",
+      "ticket": "A cloned multistream must support adding another destination without crashing and must preserve the public lifecycle methods expected from a multistream instance, including end and remove. Keep clone state independent where required and add runtime plus type coverage.",
+      "retrievalExpectedFiles": [
+        "lib/multistream.js",
+        "pino.d.ts",
+        "test/multistream.test.js"
+      ],
+      "goldChangedFiles": [
+        "lib/multistream.js",
+        "pino.d.ts",
+        "test/multistream.test.js"
+      ],
+      "oraclePaths": [
+        "test/multistream.test.js"
+      ],
+      "testCommand": [
+        "npm",
+        "exec",
+        "--offline",
+        "--",
+        "borp",
+        "--timeout",
+        "60000",
+        "test/multistream.test.js"
+      ]
+    }
+  ]
+}

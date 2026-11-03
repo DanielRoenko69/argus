@@ -1,0 +1,29 @@
+{
+  "name": "agent-workspace",
+  "version": "0.1.0",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "description": "HTTP sidecar API for the Argus Dev Agent execution workspace",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "tsx --test src/routes/exec.test.ts src/routes/gitRemote.test.ts src/routes/codexPrompt.test.ts src/routes/codexSandbox.test.ts src/routes/files.test.ts src/routes/runtimeAuth.test.ts src/routes/codexEvaluation.test.ts src/routes/technicalExperiment.test.ts src/routes/projectSnapshot.test.ts src/routes/qaTests.test.ts src/routes/stackTests.test.ts src/environments/catalog.test.ts src/environments/resolver.test.ts src/routes/codeGeneration.test.ts",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@openai/codex-sdk": "0.146.0",
+    "express": "^4.21.0",
+    "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

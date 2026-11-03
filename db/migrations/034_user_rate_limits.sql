@@ -1,0 +1,3 @@
+-- 034: Per-User Rate Limits
+ALTER TABLE mcp_models ADD COLUMN IF NOT EXISTS user_rpm_limit INTEGER DEFAULT NULL;
+ALTER TABLE mcp_models ADD COLUMN IF NOT EXISTS user_tpm_limit INTEGER DEFAULT NULL;

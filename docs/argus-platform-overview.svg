@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1878" height="718" viewBox="0 0 1878 718">
+  <defs>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8B7CFF"/>
+      <stop offset="1" stop-color="#AA9FFF"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#48D7C8"/>
+      <stop offset="1" stop-color="#82E7DB"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0B1020" flood-opacity=".12"/>
+    </filter>
+  </defs>
+  <rect width="1878" height="718" rx="26" fill="#F5F7FB"/>
+
+  <g filter="url(#shadow)">
+    <rect x="8" y="8" width="600" height="702" rx="24" fill="#FFFFFF" stroke="#DDE3EE"/>
+    <rect x="639" y="8" width="600" height="702" rx="24" fill="#FFFFFF" stroke="#DDE3EE"/>
+    <rect x="1270" y="8" width="600" height="702" rx="24" fill="#FFFFFF" stroke="#DDE3EE"/>
+  </g>
+
+  <rect x="8" y="8" width="600" height="7" rx="4" fill="url(#violet)"/>
+  <rect x="639" y="8" width="600" height="7" rx="4" fill="#5FA8FF"/>
+  <rect x="1270" y="8" width="600" height="7" rx="4" fill="url(#teal)"/>
+
+  <g font-family="Inter, ui-sans-serif, system-ui, sans-serif">
+    <text x="48" y="76" fill="#171A22" font-size="38" font-weight="720">MCP Control Plane</text>
+    <text x="679" y="76" fill="#171A22" font-size="38" font-weight="720">Argus Agent Runtime</text>
+    <text x="1310" y="76" fill="#171A22" font-size="38" font-weight="720">Governed Workflows</text>
+
+    <text x="48" y="124" fill="#626B7A" font-size="23">Connects agents to tools and context.</text>
+    <text x="679" y="124" fill="#626B7A" font-size="23">Plans and executes work in isolation.</text>
+    <text x="1310" y="124" fill="#626B7A" font-size="23">Approvals, policies and evidence.</text>
+
+    <g fill="#4F5868" font-size="22">
+      <text x="48" y="205">• Dynamic and remote MCP tools</text>
+      <text x="48" y="250">• Bundles and least-privilege access</text>
+      <text x="48" y="295">• OAuth identity propagation</text>
+      <text x="48" y="340">• Tool discovery and health checks</text>
+      <text x="48" y="385">• API and event integrations</text>
+      <text x="48" y="430">• Self-hosted deployment</text>
+
+      <text x="679" y="205">• Multi-agent orchestration</text>
+      <text x="679" y="250">• Isolated coding workspaces</text>
+      <text x="679" y="295">• Direct model provider keys</text>
+      <text x="679" y="340">• Memory and knowledge retrieval</text>
+      <text x="679" y="385">• Human-in-the-loop checkpoints</text>
+      <text x="679" y="430">• Reproducible execution traces</text>
+
+      <text x="1310" y="205">• Ticket-to-change automation</text>
+      <text x="1310" y="250">• Risk-based approval gates</text>
+      <text x="1310" y="295">• Policy checks before execution</text>
+      <text x="1310" y="340">• Immutable audit evidence</text>
+      <text x="1310" y="385">• Workflow-level observability</text>
+      <text x="1310" y="430">• Compliance-ready exports</text>
+    </g>
+
+    <g>
+      <rect x="48" y="540" width="520" height="108" rx="18" fill="#F1EFFF"/>
+      <text x="76" y="581" fill="#695BC8" font-size="17" font-weight="700" letter-spacing="2">CONNECT</text>
+      <text x="76" y="620" fill="#2B3040" font-size="23" font-weight="650">One governed tool surface</text>
+
+      <rect x="679" y="540" width="520" height="108" rx="18" fill="#ECF5FF"/>
+      <text x="707" y="581" fill="#397FC5" font-size="17" font-weight="700" letter-spacing="2">EXECUTE</text>
+      <text x="707" y="620" fill="#2B3040" font-size="23" font-weight="650">Safe, observable agent runs</text>
+
+      <rect x="1310" y="540" width="520" height="108" rx="18" fill="#E9FAF7"/>
+      <text x="1338" y="581" fill="#238A7E" font-size="17" font-weight="700" letter-spacing="2">CONTROL</text>
+      <text x="1338" y="620" fill="#2B3040" font-size="23" font-weight="650">Every change stays accountable</text>
+    </g>
+  </g>
+</svg>

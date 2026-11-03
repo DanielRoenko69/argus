@@ -1,0 +1,55 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: tls-proxy
+          image: docker.io/nginxinc/nginx-unprivileged:1.28-alpine@sha256:7377697a821c131a924a7105fafbe7414db4e9fcc77a6f08f776f33f141ec3f8
+          imagePullPolicy: IfNotPresent
+          command: ["nginx"]
+          args: ["-g", "daemon off;", "-c", "/etc/argus/nginx.conf"]
+          ports:
+            - name: https
+              containerPort: 8443
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /health
+              port: https
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 96Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          volumeMounts:
+            - name: serving-cert
+              mountPath: /var/run/secrets/argus-serving-cert
+              readOnly: true
+            - name: tls-proxy-config
+              mountPath: /etc/argus/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+            - name: tls-proxy-tmp
+              mountPath: /tmp
+      volumes:
+        - name: serving-cert
+          secret:
+            secretName: argus-kubernetes-connector-tls
+        - name: tls-proxy-config
+          configMap:
+            name: argus-kubernetes-connector-tls-proxy
+        - name: tls-proxy-tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

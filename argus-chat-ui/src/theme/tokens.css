@@ -1,0 +1,102 @@
+/* ── Argus Chat UI — Design Tokens ──────────────────────────────────────────
+   Dark values are sourced from src/shared/navHtml.ts CSS_VARS + chatCore.ts.
+   Light values are sensible semantic inversions of the same palette.
+   The pre-paint script in index.html adds/removes .dark on <html>.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ── Light mode (default) ── */
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --surface-1:   #f5f7fb;
+  --surface-2:   #ffffff;   /* card / panel     ↔ dark #141414 */
+  --surface-3:   #eef1f6;
+  --surface-4:   #f7f8fb;
+
+  /* Text */
+  --text-1:      #171a22;
+  --text-dim:    #99a3b3;
+  --text-muted:  #697386;
+
+  /* Borders */
+  --border:      #dde3ee;
+  --border-mid:  #cbd3e1;
+
+  /* Accent — Argus violet, identical in both modes */
+  --accent:        #8b7cff;
+  --accent-light:  #695bc8;
+  --accent-glow:   rgba(139, 124, 255, 0.10);
+  --accent-glow2:  rgba(139, 124, 255, 0.18);
+
+  /* Chat bubbles */
+  --user-bubble:       rgba(139, 124, 255, 0.10);
+  --user-bubble-border: rgba(139, 124, 255, 0.22);
+  --assistant-bubble:  #ffffff;                    /* assistant msg bg */
+  --code-bg:           rgba(0, 0, 0, 0.06);
+
+  /* Status colours — unchanged across modes */
+  --green:      #238a7e;
+  --green-dim:  #1b7067;
+  --blue:       #397fc5;
+  --orange:     #a87312;
+  --red:        #d64f61;
+  --brand-logo-filter: none;
+}
+
+/* ── Dark mode ── */
+.dark {
+  color-scheme: dark;
+
+  /* Surfaces — exact values from navHtml.ts CSS_VARS */
+  --surface-1:   #080b12;
+  --surface-2:   #0e1420;
+  --surface-3:   #0b1019;
+  --surface-4:   #121a28;
+
+  /* Text — exact values from navHtml.ts CSS_VARS */
+  --text-1:      #e9eef8;
+  --text-dim:    #566176;
+  --text-muted:  #8d98aa;
+
+  /* Borders — exact values from navHtml.ts CSS_VARS */
+  --border:      #1d293b;
+  --border-mid:  #2a384d;
+
+  /* Accent — same as light */
+  --accent:        #8b7cff;
+  --accent-light:  #aa9fff;
+  --accent-glow:   rgba(139, 124, 255, 0.10);
+  --accent-glow2:  rgba(139, 124, 255, 0.18);
+
+  /* Chat bubbles — from chatCore.ts msg.user / msg-bubble rules */
+  --user-bubble:        rgba(139, 124, 255, 0.12);
+  --user-bubble-border: rgba(139, 124, 255, 0.20);
+  --assistant-bubble:   #0e1420;
+  --code-bg:            rgba(0, 0, 0, 0.30);
+
+  /* Status colours — same as light */
+  --green:      #48d7c8;
+  --green-dim:  #238a7e;
+  --blue:       #5fa8ff;
+  --orange:     #f6c66c;
+  --red:        #ff7383;
+  --brand-logo-filter: brightness(0) invert(1);
+}
+
+/* ── Reset + base ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--surface-1);
+  color: var(--text-1);
+  line-height: 1.5;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}

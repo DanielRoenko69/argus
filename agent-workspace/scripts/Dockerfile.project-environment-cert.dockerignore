@@ -1,0 +1,5 @@
+**
+!dist/
+!dist/**
+!scripts/
+!scripts/certify-project-environments.mjs

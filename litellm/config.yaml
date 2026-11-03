@@ -1,0 +1,23 @@
+# Local compatibility gateway for Argus development and certification.
+#
+# The public OpenAI credential is injected only through LITELLM_OPENAI_API_KEY.
+# Do not place provider credentials in this file. Proxy authentication and the
+# Admin UI are configured through environment variables in docker-compose.yml.
+# Production must replace the local master key with scoped virtual keys and a
+# proper secret injection mechanism.
+model_list:
+  - model_name: argus-openai
+    litellm_params:
+      model: os.environ/LITELLM_UPSTREAM_MODEL
+      api_key: os.environ/LITELLM_OPENAI_API_KEY
+  - model_name: argus-local-embedding
+    litellm_params:
+      model: os.environ/LITELLM_OLLAMA_EMBEDDING_MODEL
+      api_base: os.environ/OLLAMA_API_BASE
+
+litellm_settings:
+  drop_params: true
+  # Local CPU inference can spend more than two minutes ingesting a workflow
+  # prompt before it emits the first token. Keep the compatibility gateway
+  # patient enough for end-to-end Dev runs on development laptops.
+  request_timeout: 300

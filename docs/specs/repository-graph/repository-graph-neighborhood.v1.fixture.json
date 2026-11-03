@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "snapshot": {
+    "id": "42",
+    "repository": "argus-project/argus-core",
+    "branch": "main",
+    "commitSha": "e623a76f00000000000000000000000000000000",
+    "graphDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "provider": "graphify",
+    "parserVersion": "tree-sitter-v1",
+    "schemaVersion": "argus-graphify-v3",
+    "status": "ready",
+    "immutable": true
+  },
+  "query": {
+    "seed": "symbol:501",
+    "q": null,
+    "nodeTypes": ["file", "symbol"],
+    "edgeTypes": [],
+    "direction": "both",
+    "depth": 1,
+    "limit": 50
+  },
+  "nodes": [
+    {
+      "id": "symbol:501",
+      "type": "symbol",
+      "label": "runAgent",
+      "href": null,
+      "metadata": {
+        "filePath": "src/agents/agentRunner.ts",
+        "language": "typescript",
+        "qualifiedName": "src/agents/agentRunner.ts#runAgent",
+        "kind": "function",
+        "startLine": 400,
+        "endLine": 760
+      }
+    },
+    {
+      "id": "file:71",
+      "type": "file",
+      "label": "agentRunner.ts",
+      "href": null,
+      "metadata": { "path": "src/agents/agentRunner.ts", "language": "typescript" }
+    }
+  ],
+  "edges": [
+    { "id": "declares:71:501", "source": "file:71", "target": "symbol:501", "type": "declares" }
+  ],
+  "truncated": false,
+  "truncationReasons": [],
+  "nextCursor": null,
+  "appliedLimits": {
+    "maxDepth": 3,
+    "maxNodes": 400,
+    "maxEdges": 800,
+    "maxResponseBytes": 262144,
+    "requestedDepth": 1,
+    "requestedLimit": 50,
+    "returnedNodes": 2,
+    "returnedEdges": 1,
+    "elapsedMs": 8
+  },
+  "authorizedLinks": []
+}

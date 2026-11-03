@@ -1,0 +1,269 @@
+{
+  "realm": "argus-mfa-demo",
+  "enabled": true,
+  "displayName": "Argus Local MFA Demo",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 900,
+  "ssoSessionMaxLifespan": 3600,
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA256",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "otpPolicyLookAheadWindow": 1,
+  "clients": [
+    {
+      "clientId": "argus-local-mfa",
+      "name": "Argus Local MFA Demo",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "argus-local-mfa-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "publicClient": false,
+      "redirectUris": [
+        "http://localhost:3000/auth/oidc/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "Argus groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        },
+        {
+          "name": "Authentication methods",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-amr-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "argus-gitea",
+      "name": "Argus Gitea Backend SSO Demo",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "argus-gitea-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "publicClient": false,
+      "redirectUris": [
+        "http://localhost:3005/user/oauth2/argus-mfa-demo/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3005"
+      ],
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "Argus groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "argus-grafana",
+      "name": "Argus Grafana Backend SSO Demo",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "argus-grafana-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "publicClient": false,
+      "redirectUris": [
+        "http://localhost:3006/login/generic_oauth"
+      ],
+      "webOrigins": [
+        "http://localhost:3006"
+      ],
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "Argus groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "argus-jenkins",
+      "name": "Argus Jenkins Backend SSO Demo",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "argus-jenkins-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8081/securityRealm/finishLogin"
+      ],
+      "webOrigins": [
+        "http://localhost:8081"
+      ],
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "Argus groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "argus-opensearch",
+      "name": "Argus OpenSearch Backend SSO Demo",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "argus-opensearch-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5601/auth/openid/login"
+      ],
+      "webOrigins": [
+        "http://localhost:5601"
+      ],
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "Argus groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    }
+  ],
+  "groups": [
+    { "name": "argus-platform-admins" },
+    { "name": "argus-developers" }
+  ],
+  "users": [
+    {
+      "id": "f78ec184-49df-4b32-bc96-21fa1e52c5a1",
+      "username": "argus-mfa-admin",
+      "email": "mfa-admin@argus.test",
+      "firstName": "Argus",
+      "lastName": "MFA Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "totp": true,
+      "groups": ["/argus-platform-admins"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ArgusMfa42!",
+          "temporary": false
+        },
+        {
+          "id": "argus-mfa-demo-totp",
+          "userLabel": "Argus local demo",
+          "type": "otp",
+          "secretData": "{\"value\":\"ARGUS-MFA-DEMO-KEY\"}",
+          "credentialData": "{\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA256\",\"subType\":\"totp\"}"
+        }
+      ]
+    },
+    {
+      "id": "b37e0421-2afc-4053-9f80-4f9529106853",
+      "username": "argus-mfa-developer",
+      "email": "mfa-developer@argus.test",
+      "firstName": "Argus",
+      "lastName": "MFA Developer",
+      "enabled": true,
+      "emailVerified": true,
+      "totp": true,
+      "groups": ["/argus-developers"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ArgusMfa42!",
+          "temporary": false
+        },
+        {
+          "id": "argus-mfa-developer-totp",
+          "userLabel": "Argus local developer demo",
+          "type": "otp",
+          "secretData": "{\"value\":\"ARGUS-MFA-DEVELOPER\"}",
+          "credentialData": "{\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA256\",\"subType\":\"totp\"}"
+        }
+      ]
+    },
+    {
+      "id": "2d0dd753-0b25-4ff4-99ac-b426b92e863c",
+      "username": "alex",
+      "email": "alex@argus.test",
+      "firstName": "Alex",
+      "lastName": "Argus",
+      "enabled": true,
+      "emailVerified": true,
+      "totp": true,
+      "groups": ["/argus-platform-admins"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ArgusMfa42!",
+          "temporary": false
+        },
+        {
+          "id": "argus-mfa-alex-totp",
+          "userLabel": "Alex local linking demo",
+          "type": "otp",
+          "secretData": "{\"value\":\"ARGUS-MFA-ALEX\"}",
+          "credentialData": "{\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA256\",\"subType\":\"totp\"}"
+        }
+      ]
+    }
+  ]
+}

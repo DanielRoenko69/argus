@@ -1,0 +1,45 @@
+{
+  "annotations": { "list": [] },
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "argus-prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "expr": "up{job=\"argus-core\"}", "legendFormat": "Argus Core", "refId": "A" }],
+      "title": "Argus Core availability",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "argus-loki" },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 },
+      "id": 2,
+      "options": { "dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
+      "targets": [{ "expr": "{environment=\"local-demo\"}", "queryType": "range", "refId": "A" }],
+      "title": "Governed AIOps demo signals",
+      "type": "logs"
+    },
+    {
+      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 8 },
+      "id": 3,
+      "options": { "content": "## One workforce identity, separate runtime credentials\n\nThis portal was opened with the same Keycloak identity used by Argus. Prometheus, Loki and Jaeger remain private machine backends; Grafana is their human-facing SSO boundary. Argus workflows continue to use bundle-scoped service or delegated credentials and retain their own audit evidence.", "mode": "markdown" },
+      "title": "Argus identity boundary",
+      "type": "text"
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 41,
+  "tags": ["argus", "aiops", "sso", "demo"],
+  "templating": { "list": [] },
+  "time": { "from": "now-15m", "to": "now" },
+  "timezone": "browser",
+  "title": "Argus AIOps · Workforce SSO",
+  "uid": "argus-sso-overview",
+  "version": 1
+}

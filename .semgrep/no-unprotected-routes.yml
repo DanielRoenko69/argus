@@ -1,0 +1,50 @@
+rules:
+  - id: express-state-changing-route-missing-auth
+    message: >
+      Express route app.$METHOD('$PATH', ...) hat keine requireAuth / requireAdmin Middleware.
+      Alle schreibenden Routen (POST/PUT/PATCH/DELETE) müssen geschützt sein.
+      Fix: requireAuth oder requireAdmin als zweites Argument vor dem Handler ergänzen.
+    severity: ERROR
+    languages: [typescript, javascript]
+    patterns:
+      - pattern: |
+          $APP.$METHOD($PATH, async function($REQ, $RES) { ... })
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(post|put|patch|delete)$
+      - pattern-not: |
+          $APP.$METHOD($PATH, requireAuth, ...)
+      - pattern-not: |
+          $APP.$METHOD($PATH, requireAdmin, ...)
+      - pattern-not: |
+          $APP.$METHOD($PATH, ..., requireAuth, ...)
+      - pattern-not: |
+          $APP.$METHOD($PATH, ..., requireAdmin, ...)
+    metadata:
+      category: security
+      cwe: "CWE-306: Missing Authentication for Critical Function"
+      owasp: "A01:2021 - Broken Access Control"
+
+  - id: express-arrow-route-missing-auth
+    message: >
+      Express route app.$METHOD('$PATH', ...) (arrow function) hat keine requireAuth / requireAdmin Middleware.
+    severity: ERROR
+    languages: [typescript, javascript]
+    patterns:
+      - pattern: |
+          $APP.$METHOD($PATH, async ($REQ, $RES) => { ... })
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(post|put|patch|delete)$
+      - pattern-not: |
+          $APP.$METHOD($PATH, requireAuth, ...)
+      - pattern-not: |
+          $APP.$METHOD($PATH, requireAdmin, ...)
+      - pattern-not: |
+          $APP.$METHOD($PATH, ..., requireAuth, ...)
+      - pattern-not: |
+          $APP.$METHOD($PATH, ..., requireAdmin, ...)
+    metadata:
+      category: security
+      cwe: "CWE-306: Missing Authentication for Critical Function"
+      owasp: "A01:2021 - Broken Access Control"

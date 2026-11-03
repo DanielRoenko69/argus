@@ -1,0 +1,59 @@
+{
+  "eventId": "6d826b73-3280-4fdc-a387-6c8ceee493ad",
+  "schemaVersion": 1,
+  "sequence": 842,
+  "occurredAt": "2026-09-07T12:01:04.000Z",
+  "receivedAt": "2026-09-07T12:01:04.120Z",
+  "environment": "production-eu",
+  "workspaceKey": "workspace-platform",
+  "tenantKey": "tenant-acme",
+  "solution": "argus.dev",
+  "producer": {
+    "name": "runtime-approvals",
+    "eventId": "approval-decision-391"
+  },
+  "actor": {
+    "type": "human",
+    "id": "17",
+    "ssoSubject": "oidc|acme|alex",
+    "authMethod": "oidc",
+    "effectiveRoles": ["developer", "runtime_approver"]
+  },
+  "action": "approval.approved",
+  "outcome": "success",
+  "risk": "high",
+  "resource": {
+    "type": "workflow",
+    "id": "161",
+    "revision": "12"
+  },
+  "policy": {
+    "id": "four-eyes",
+    "version": "3",
+    "decision": "allow"
+  },
+  "approvalId": "391",
+  "correlation": {
+    "rootRunId": "run-root-24",
+    "traceId": "trace-root-24",
+    "spanId": "approval-span",
+    "requestId": "request-approval-391"
+  },
+  "payloadSummary": {
+    "context": {
+      "reasonCode": "different_reviewer"
+    }
+  },
+  "payloadDigest": "63e7f6adeb7f237f9f606fdd3315079099f81b6f51a7fdca8a80ad967b940bb7",
+  "beforeDigest": null,
+  "afterDigest": null,
+  "redactionProfile": "argus.audit.redaction.v1",
+  "retentionClass": "business-audit-standard",
+  "retentionUntil": "2033-09-07T12:01:04.000Z",
+  "legalHold": false,
+  "previousHash": "6285f63bf31a0e8782a1a0c37c3d9f735343448b3d682d2142f7120466ab75bd",
+  "eventHash": "d05da006cbe7dc9b48e76ee2e610c7f51b61e17eaf3bf639fedbc4b85756c194",
+  "signingKeyId": null,
+  "replayed": false
+}
+

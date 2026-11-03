@@ -1,0 +1,20 @@
+server.name: argus-opensearch-dashboards
+server.host: "0.0.0.0"
+
+opensearch.hosts: ["http://opensearch-sso:9200"]
+opensearch.username: "kibanaserver"
+opensearch.password: "kibanaserver"
+opensearch.requestHeadersAllowlist: ["Authorization", "securitytenant"]
+
+opensearch_security.auth.multiple_auth_enabled: true
+opensearch_security.auth.type: ["openid", "basicauth"]
+opensearch_security.openid.connect_url: "http://keycloak-mfa:8080/realms/argus-mfa-demo/.well-known/openid-configuration"
+opensearch_security.openid.client_id: "argus-opensearch"
+opensearch_security.openid.client_secret: "argus-opensearch-client-secret"
+opensearch_security.openid.base_redirect_url: "http://localhost:5601"
+opensearch_security.openid.scope: "openid profile email"
+opensearch_security.openid.header: "Authorization"
+opensearch_security.openid.refresh_tokens: true
+opensearch_security.cookie.secure: false
+opensearch_security.multitenancy.enabled: false
+opensearch_security.readonly_mode.roles: ["argus_demo_read"]

@@ -1,0 +1,99 @@
+# Local, production-shaped WORM evidence lab. MinIO enforces versioning and
+# COMPLIANCE Object Lock; the gateway signs only after reading that lock back.
+# Start and certify with: npm run demo:worm:up
+services:
+  worm-minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${WORM_MINIO_ROOT_USER:?Run npm run setup:worm-demo first}
+      MINIO_ROOT_PASSWORD: ${WORM_MINIO_ROOT_PASSWORD:?Run npm run setup:worm-demo first}
+      MINIO_REGION_NAME: ${WORM_MINIO_REGION:-us-east-1}
+    ports:
+      - "127.0.0.1:${WORM_MINIO_PORT:-9900}:9000"
+      - "127.0.0.1:${WORM_MINIO_CONSOLE_PORT:-9901}:9001"
+    volumes:
+      - worm-minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  worm-minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        mc alias set local http://worm-minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
+        mc mb --ignore-existing --with-lock "local/$${WORM_BUCKET}"
+        mc version enable "local/$${WORM_BUCKET}"
+        mc retention set --default COMPLIANCE "$${WORM_RETENTION_DAYS}d" "local/$${WORM_BUCKET}"
+        mc retention info --default "local/$${WORM_BUCKET}"
+    environment:
+      MINIO_ROOT_USER: ${WORM_MINIO_ROOT_USER:?Run npm run setup:worm-demo first}
+      MINIO_ROOT_PASSWORD: ${WORM_MINIO_ROOT_PASSWORD:?Run npm run setup:worm-demo first}
+      WORM_BUCKET: ${WORM_BUCKET:-argus-audit-worm}
+      WORM_RETENTION_DAYS: ${WORM_RETENTION_DAYS:-7}
+    depends_on:
+      worm-minio:
+        condition: service_healthy
+    restart: "no"
+
+  worm-gateway:
+    build:
+      context: ./demo/worm-gateway
+    environment:
+      PORT: "8787"
+      MINIO_ENDPOINT: http://worm-minio:9000
+      MINIO_ROOT_USER: ${WORM_MINIO_ROOT_USER:?Run npm run setup:worm-demo first}
+      MINIO_ROOT_PASSWORD: ${WORM_MINIO_ROOT_PASSWORD:?Run npm run setup:worm-demo first}
+      MINIO_REGION: ${WORM_MINIO_REGION:-us-east-1}
+      WORM_BUCKET: ${WORM_BUCKET:-argus-audit-worm}
+      WORM_RETENTION_DAYS: ${WORM_RETENTION_DAYS:-7}
+      WORM_PROVIDER_NAME: ${WORM_PROVIDER_NAME:-Argus MinIO WORM Demo}
+      WORM_SIGNING_KEY_ID: ${WORM_SIGNING_KEY_ID:-argus-minio-worm-demo-v1}
+      WORM_SIGNING_PRIVATE_KEY_FILE: /run/secrets/argus-worm-demo-signing-key
+      WORM_BEARER_TOKEN_FILE: /run/secrets/argus-worm-demo-token
+    ports:
+      - "127.0.0.1:${WORM_GATEWAY_PORT:-8787}:8787"
+    volumes:
+      - ./secrets/argus-worm-demo-signing-key.pem:/run/secrets/argus-worm-demo-signing-key:ro
+      - ./secrets/argus-worm-demo-token:/run/secrets/argus-worm-demo-token:ro
+    depends_on:
+      worm-minio-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.5"
+
+  mcp-server:
+    environment:
+      ARGUS_EXTERNAL_ANCHOR_ENABLED: "true"
+      ARGUS_EXTERNAL_ANCHOR_URL: http://worm-gateway:8787/v1/anchors
+      ARGUS_EXTERNAL_ANCHOR_PROVIDER: ${WORM_PROVIDER_NAME:-Argus MinIO WORM Demo}
+      ARGUS_EXTERNAL_ANCHOR_KEY_ID: ${WORM_SIGNING_KEY_ID:-argus-minio-worm-demo-v1}
+      ARGUS_EXTERNAL_ANCHOR_PUBLIC_KEY_FILE: /run/secrets/argus-worm-demo-public-key
+      ARGUS_EXTERNAL_ANCHOR_TOKEN_FILE: /run/secrets/argus-worm-demo-token
+      ARGUS_EXTERNAL_ANCHOR_KINDS: worm_object
+      ARGUS_EXTERNAL_ANCHOR_ALLOW_LOCAL_HTTP: "true"
+      ARGUS_EXTERNAL_ANCHOR_HTTP_HOSTS: worm-gateway
+    volumes:
+      - ./secrets/argus-worm-demo-public-key.pem:/run/secrets/argus-worm-demo-public-key:ro
+      - ./secrets/argus-worm-demo-token:/run/secrets/argus-worm-demo-token:ro
+    depends_on:
+      worm-gateway:
+        condition: service_healthy
+
+volumes:
+  worm-minio-data:

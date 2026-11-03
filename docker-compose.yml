@@ -1,0 +1,795 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-aiops}
+      POSTGRES_USER: ${POSTGRES_USER:-aiops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aiops}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # Optional local LLM gateway for compatibility and routing tests. Argus Core
+  # remains provider-neutral and can still call OpenAI/Anthropic directly.
+  # Start with: docker compose --profile llm-gateway up -d litellm
+  ollama:
+    profiles: ["local-llm"]
+    image: ollama/ollama:latest@sha256:4dea9fb511947e24a84237bb636b0203abcb2ff0d3fbc7b4ff865deb91362131
+    environment:
+      OLLAMA_CONTEXT_LENGTH: ${OLLAMA_CONTEXT_LENGTH:-8192}
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-5m}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-1}
+      OLLAMA_NUM_PARALLEL: ${OLLAMA_NUM_PARALLEL:-1}
+    ports:
+      - "127.0.0.1:${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+          cpus: '4.0'
+
+  litellm-db:
+    profiles: ["llm-gateway"]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: litellm
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: ${LITELLM_DATABASE_PASSWORD:-litellm-local-only}
+    volumes:
+      - litellm-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm -d litellm"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  litellm:
+    profiles: ["llm-gateway"]
+    image: ghcr.io/berriai/litellm:v1.81.14-stable.gpt-5.4-patch7@sha256:b4eb98902ad234fc418237aff54a42021e2f35ee8d104d6541d31a694197d60d
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    environment:
+      LITELLM_UPSTREAM_MODEL: ${LITELLM_UPSTREAM_MODEL:-openai/gpt-5.6-terra}
+      LITELLM_OPENAI_API_KEY: ${LITELLM_OPENAI_API_KEY:-}
+      LITELLM_OLLAMA_MODEL: ${LITELLM_OLLAMA_MODEL:-ollama_chat/granite3.3:2b}
+      LITELLM_OLLAMA_CODER_MODEL: ${LITELLM_OLLAMA_CODER_MODEL:-ollama_chat/qwen2.5-coder:3b}
+      LITELLM_OLLAMA_EMBEDDING_MODEL: ${LITELLM_OLLAMA_EMBEDDING_MODEL:-ollama/qwen3-embedding:0.6b}
+      OLLAMA_API_BASE: ${OLLAMA_API_BASE:-http://ollama:11434}
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-}
+      UI_USERNAME: ${LITELLM_UI_USERNAME:-admin}
+      UI_PASSWORD: ${LITELLM_UI_PASSWORD:-}
+      DATABASE_URL: postgresql://litellm:${LITELLM_DATABASE_PASSWORD:-litellm-local-only}@litellm-db:5432/litellm
+      # Permit Admin UI model deployments to be persisted in LiteLLM's own
+      # PostgreSQL database. Provider secrets entered there never enter the
+      # checked-in config.yaml.
+      STORE_MODEL_IN_DB: "True"
+    ports:
+      - "127.0.0.1:${LITELLM_PORT:-4000}:4000"
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml:ro
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+    depends_on:
+      litellm-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # Optional end-to-end development lab. Gitea is the real source-control
+  # system; its REST capabilities are installed into Argus MCP Fabric by
+  # scripts/bootstrap-dev-demo.ps1. Start only with the `dev-demo` profile.
+  gitea:
+    profiles: ["dev-demo"]
+    image: gitea/gitea:1.27.0@sha256:7dff60d7ea6df9d0bdf78971cdb1350e9b7df3fda5f115c77afe12122887bd64
+    environment:
+      USER_UID: "1000"
+      USER_GID: "1000"
+      GITEA__database__DB_TYPE: sqlite3
+      GITEA__database__PATH: /data/gitea/gitea.db
+      GITEA__repository__DEFAULT_BRANCH: main
+      GITEA__server__DOMAIN: localhost
+      GITEA__server__HTTP_PORT: "3000"
+      GITEA__server__ROOT_URL: http://localhost:${GITEA_PORT:-3005}/
+      GITEA__server__LOCAL_ROOT_URL: http://gitea:3000/
+      GITEA__service__DISABLE_REGISTRATION: "true"
+      GITEA__security__INSTALL_LOCK: "true"
+      # Local Compose webhook target for the Argus external-CI callback.
+      # Keep this explicit; do not use a wildcard host allowlist.
+      GITEA__security__ALLOWED_HOST_LIST: "mcp-server,localhost,127.0.0.1"
+      GITEA__actions__ENABLED: "true"
+      GITEA_RUNNER_REGISTRATION_TOKEN: ${GITEA_RUNNER_REGISTRATION_TOKEN:-}
+    ports:
+      - "127.0.0.1:${GITEA_PORT:-3005}:3000"
+    volumes:
+      - gitea-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # Local-only Gitea Actions runner. The Docker socket is intentionally gated
+  # behind `dev-demo`; never treat this profile as a production hardening model.
+  gitea-runner:
+    profiles: ["dev-demo"]
+    image: gitea/runner:2.0.0
+    environment:
+      CONFIG_FILE: /config.yaml
+      GITEA_INSTANCE_URL: http://gitea:3000
+      GITEA_RUNNER_REGISTRATION_TOKEN: ${GITEA_RUNNER_REGISTRATION_TOKEN:-}
+      GITEA_RUNNER_NAME: argus-local-runner
+      GITEA_RUNNER_LABELS: ubuntu-latest:docker://node:20-bookworm
+    volumes:
+      - ./gitea/runner-config.yaml:/config.yaml:ro
+      - gitea-runner-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      gitea:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2.0'
+
+  mcp-server:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      PORT: "3000"
+      NODE_ENV: ${NODE_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CHAT_SPA_ENABLED: ${CHAT_SPA_ENABLED:-true}
+
+      # ── Auth ───────────────────────────────────────────────
+      MCP_API_KEYS: ${MCP_API_KEYS:?MCP_API_KEYS is required}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required (min 32 chars)}
+      DB_ENCRYPTION_KEY: ${DB_ENCRYPTION_KEY:?DB_ENCRYPTION_KEY is required (openssl rand -hex 32)}
+      SESSION_MAX_AGE_HOURS: ${SESSION_MAX_AGE_HOURS:-8}
+      LOCAL_AUTH_ENABLED: ${LOCAL_AUTH_ENABLED:-true}
+
+      # Interactive workforce SSO. Entra and generic OIDC are mutually
+      # exclusive; signed ID-token amr/acr claims back the MFA step-up gate.
+      ENTRA_SSO_ENABLED: ${ENTRA_SSO_ENABLED:-false}
+      ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
+      ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID:-}
+      ENTRA_CLIENT_SECRET: ${ENTRA_CLIENT_SECRET:-}
+      ENTRA_REDIRECT_URI: ${ENTRA_REDIRECT_URI:-}
+      ENTRA_GROUP_MAP: ${ENTRA_GROUP_MAP:-}
+      ENTRA_DEFAULT_ROLE: ${ENTRA_DEFAULT_ROLE:-viewer}
+      ENTRA_EMERGENCY_LOCAL_ADMIN: ${ENTRA_EMERGENCY_LOCAL_ADMIN:-true}
+      ENTRA_DISABLE_LOCAL_LOGIN: ${ENTRA_DISABLE_LOCAL_LOGIN:-false}
+      OIDC_SSO_ENABLED: ${OIDC_SSO_ENABLED:-false}
+      OIDC_PROVIDER_NAME: ${OIDC_PROVIDER_NAME:-Single Sign-On}
+      OIDC_AUTHORIZATION_URL: ${OIDC_AUTHORIZATION_URL:-}
+      OIDC_TOKEN_URL: ${OIDC_TOKEN_URL:-}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_JWKS_URI: ${OIDC_JWKS_URI:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
+      OIDC_SCOPES: ${OIDC_SCOPES:-openid profile email}
+      OIDC_SUBJECT_CLAIM: ${OIDC_SUBJECT_CLAIM:-sub}
+      OIDC_EMAIL_CLAIM: ${OIDC_EMAIL_CLAIM:-email}
+      OIDC_DISPLAY_NAME_CLAIM: ${OIDC_DISPLAY_NAME_CLAIM:-name}
+      OIDC_GROUPS_CLAIM: ${OIDC_GROUPS_CLAIM:-groups}
+      OIDC_GROUP_MAP: ${OIDC_GROUP_MAP:-}
+      OIDC_DEFAULT_ROLE: ${OIDC_DEFAULT_ROLE:-viewer}
+      OIDC_MFA_AMR_VALUES: ${OIDC_MFA_AMR_VALUES:-mfa,otp,hwk,webauthn,fido}
+      OIDC_MFA_ACR_VALUES: ${OIDC_MFA_ACR_VALUES:-}
+      OIDC_MFA_MAX_AGE_SECONDS: ${OIDC_MFA_MAX_AGE_SECONDS:-600}
+      # Defaults mirror src/config/env.ts so an unset variable keeps the
+      # built-in behaviour.
+      OIDC_EMERGENCY_LOCAL_ADMIN: ${OIDC_EMERGENCY_LOCAL_ADMIN:-true}
+      OIDC_DISABLE_LOCAL_LOGIN: ${OIDC_DISABLE_LOCAL_LOGIN:-false}
+      OIDC_ACCOUNT_MANAGEMENT_URL: ${OIDC_ACCOUNT_MANAGEMENT_URL:-}
+      OIDC_ADMIN_CONSOLE_URL: ${OIDC_ADMIN_CONSOLE_URL:-}
+      ENTRA_ACCOUNT_MANAGEMENT_URL: ${ENTRA_ACCOUNT_MANAGEMENT_URL:-https://mysignins.microsoft.com/security-info}
+      ENTRA_ADMIN_CONSOLE_URL: ${ENTRA_ADMIN_CONSOLE_URL:-https://entra.microsoft.com/#view/Microsoft_AAD_ConditionalAccess/ConditionalAccessBlade/~/Policies}
+      # Optional API bearer tokens (separate from interactive SSO). Issuer and
+      # audience are mandatory when enabled; subjects must map to Argus users.
+      OAUTH2_ENABLED: ${OAUTH2_ENABLED:-false}
+      OAUTH2_ISSUER: ${OAUTH2_ISSUER:-}
+      OAUTH2_AUDIENCE: ${OAUTH2_AUDIENCE:-}
+      OAUTH2_JWKS_URI: ${OAUTH2_JWKS_URI:-}
+      # Commercial workforce federation for human-facing backend consoles.
+      # Community installations continue to use service credentials and local
+      # backend logins unless this entitlement is explicitly enabled.
+      ARGUS_BACKEND_SSO_ENABLED: ${ARGUS_BACKEND_SSO_ENABLED:-false}
+      ARGUS_BACKEND_SSO_ALLOWED_ORIGINS: ${ARGUS_BACKEND_SSO_ALLOWED_ORIGINS:-}
+
+      # Runtime-only LiteLLM Virtual Key. The Proxy master key remains scoped
+      # to bootstrap/admin operations and is never passed into Argus Core.
+      ARGUS_LITELLM_API_KEY: ${ARGUS_LITELLM_API_KEY:-}
+
+      # ── PostgreSQL ─────────────────────────────────────────
+      POSTGRES_ENABLED: "true"
+      # Built from parts so the containerised server ALWAYS reaches the
+      # `postgres` service on the compose network — never the host. The
+      # POSTGRES_CONNECTION_URL in .env (host `localhost`) is only for
+      # `npm run dev` on the host. Same pattern as the langgraph service below.
+      POSTGRES_CONNECTION_URL: postgresql://${POSTGRES_USER:-aiops}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aiops}
+
+      # Redis is enabled for the local stack and shares the generated password
+      # with the Compose Redis service. Core derives its internal URL from it.
+      REDIS_ENABLED: ${REDIS_ENABLED:-true}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+
+      # ── Kubernetes ─────────────────────────────────────────
+      K8S_ENABLED: ${K8S_ENABLED:-false}
+      KUBERNETES_SERVICE_HOST: ${KUBERNETES_SERVICE_HOST:-}
+      KUBERNETES_SERVICE_PORT: ${KUBERNETES_SERVICE_PORT:-6443}
+      KUBERNETES_CERTIFICATION_WARNING_AGE_HOURS: ${KUBERNETES_CERTIFICATION_WARNING_AGE_HOURS:-120}
+      KUBERNETES_CERTIFICATION_MAX_AGE_HOURS: ${KUBERNETES_CERTIFICATION_MAX_AGE_HOURS:-168}
+      KUBERNETES_CERTIFICATION_ENFORCE_AIOPS: ${KUBERNETES_CERTIFICATION_ENFORCE_AIOPS:-true}
+      AIOPS_POST_CHANGE_MONITOR_DELAY_SEC: ${AIOPS_POST_CHANGE_MONITOR_DELAY_SEC:-300}
+      AIOPS_POST_CHANGE_MONITOR_POLL_SEC: ${AIOPS_POST_CHANGE_MONITOR_POLL_SEC:-30}
+      AIOPS_REMEDIATION_RECONCILE_STALE_SEC: ${AIOPS_REMEDIATION_RECONCILE_STALE_SEC:-120}
+
+      # ── Grafana ────────────────────────────────────────────
+      GRAFANA_ENABLED: ${GRAFANA_ENABLED:-false}
+      GRAFANA_URL: ${GRAFANA_URL:-}
+      GRAFANA_API_KEY: ${GRAFANA_API_KEY:-}
+
+      # ── OpenSearch ─────────────────────────────────────────
+      OPENSEARCH_ENABLED: ${OPENSEARCH_ENABLED:-false}
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-}
+      OPENSEARCH_USERNAME: ${OPENSEARCH_USERNAME:-}
+      OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD:-}
+
+      # ── Limits ─────────────────────────────────────────────
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-120}
+      MAX_RESULT_ROWS: ${MAX_RESULT_ROWS:-500}
+      MAX_RESULT_SIZE_BYTES: ${MAX_RESULT_SIZE_BYTES:-524288}
+      DYNAMIC_TOOLS_POLL_INTERVAL_SEC: ${DYNAMIC_TOOLS_POLL_INTERVAL_SEC:-30}
+      # Exact hostnames only. These are Argus-owned services in this Compose
+      # project; keeping them here prevents a later base-Compose rebuild from
+      # silently breaking installed Dev/AIOps connectors. Arbitrary private
+      # hosts and direct private IPs remain blocked by the SSRF guard.
+      SSRF_ALLOWLIST_HOSTS: gitea,langgraph,argus-dev,argus-aiops,prometheus,loki,jaeger,host.docker.internal,argus-aiops-control-plane,${SSRF_ALLOWLIST_HOSTS:-}
+      ARGUS_EGRESS_ALLOWLIST: ${ARGUS_EGRESS_ALLOWLIST:-}
+
+      # ── OpenTelemetry (optional) ───────────────────────────
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-argus-core}
+
+      # ── Notifications (optional) ───────────────────────────
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      TEAMS_WEBHOOK_URL: ${TEAMS_WEBHOOK_URL:-}
+
+      # ── Direct LLM providers (Agent Runner) ────────────────
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.anthropic.com/v1}
+      OPENAI_COMPAT_BASE_URL: ${OPENAI_COMPAT_BASE_URL:-}
+      OPENAI_COMPAT_API_KEY: ${OPENAI_COMPAT_API_KEY:-}
+      LLM_PROVIDER_OVERRIDES: ${LLM_PROVIDER_OVERRIDES:-}
+      DIRECT_AGENT_API_KEYS: ${DIRECT_AGENT_API_KEYS:-false}
+      ALLOW_EMPTY_OPENAI_COMPAT_API_KEY: ${ALLOW_EMPTY_OPENAI_COMPAT_API_KEY:-false}
+      LLM_REQUEST_TIMEOUT_MS: ${LLM_REQUEST_TIMEOUT_MS:-120000}
+      ARGUS_CODEX_TIMEOUT_SEC: ${ARGUS_CODEX_TIMEOUT_SEC:-900}
+      RAG_SEARCH_TIMEOUT_MS: ${RAG_SEARCH_TIMEOUT_MS:-30000}
+      # Fresh installs are provider-neutral by default. Set true only to keep
+      # the historical preconfigured starter agents during initial bootstrap.
+      ARGUS_INSTALL_STARTER_AGENTS: ${ARGUS_INSTALL_STARTER_AGENTS:-false}
+
+      # ── AI interaction transparency (enabled by default) ───
+      AI_TRANSPARENCY_NOTICE_ENABLED: ${AI_TRANSPARENCY_NOTICE_ENABLED:-true}
+      AI_TRANSPARENCY_NOTICE_TEXT: ${AI_TRANSPARENCY_NOTICE_TEXT:-You are interacting with an AI agent. Responses may be inaccurate; verify important information and review tool actions before approval.}
+      ARGUS_ENVIRONMENT: ${ARGUS_ENVIRONMENT:-local}
+      ARGUS_AI_ACT_WORKLOAD_IDENTITY_SUBJECT: ${ARGUS_AI_ACT_WORKLOAD_IDENTITY_SUBJECT:-workload:argus-core:workflow-trigger}
+      ARGUS_AI_ACT_WORKLOAD_IDENTITY_VERIFIED: ${ARGUS_AI_ACT_WORKLOAD_IDENTITY_VERIFIED:-false}
+
+      # Anonymous embeddable agent widgets are fail-closed by default. The
+      # acceptance script enables this switch only for its controlled test run.
+      PUBLIC_WIDGET_ENABLED: ${PUBLIC_WIDGET_ENABLED:-false}
+      WIDGET_TOKEN_SECRET: ${WIDGET_TOKEN_SECRET:-}
+      WIDGET_TOKEN_TTL_SEC: ${WIDGET_TOKEN_TTL_SEC:-1800}
+      TURNSTILE_ENABLED: ${TURNSTILE_ENABLED:-false}
+      TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
+
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-large}
+      # Automatic Agent Memory needs an independent embedding provider. Codex
+      # and Claude subscription runtimes do not expose embeddings, so this is
+      # opt-in and enabled by the Everything/local-embedding installer only.
+      ARGUS_AGENT_MEMORY_AUTO_ENABLED: ${ARGUS_AGENT_MEMORY_AUTO_ENABLED:-false}
+      # Native code embeddings are explicit because remote providers may incur
+      # indexing cost. Local bootstrap enables them against argus-local-embedding.
+      ARGUS_CODE_EMBEDDINGS_ENABLED: ${ARGUS_CODE_EMBEDDINGS_ENABLED:-false}
+      # The Knowledge UI exposes only the bounded, read-only repository graph
+      # endpoint. Authentication, repository_graph.read and bundle scope still
+      # apply before any immutable snapshot neighborhood is serialized.
+      ARGUS_REPOSITORY_GRAPH_ENABLED: ${ARGUS_REPOSITORY_GRAPH_ENABLED:-true}
+      ARGUS_AUDIT_EVIDENCE_V1_ENABLED: ${ARGUS_AUDIT_EVIDENCE_V1_ENABLED:-false}
+      ARGUS_AUDIT_SIGNING_KEY_ID: ${ARGUS_AUDIT_SIGNING_KEY_ID:-}
+      # A custom Compose override must mount this path read-only. Inline PEM is
+      # supported for an external secret manager, but must not be committed.
+      ARGUS_AUDIT_SIGNING_PRIVATE_KEY_FILE: ${ARGUS_AUDIT_SIGNING_PRIVATE_KEY_FILE:-}
+      ARGUS_AUDIT_SIGNING_PRIVATE_KEY: ${ARGUS_AUDIT_SIGNING_PRIVATE_KEY:-}
+      ARGUS_AUDIT_CHECKPOINT_INTERVAL_SEC: ${ARGUS_AUDIT_CHECKPOINT_INTERVAL_SEC:-300}
+      ARGUS_AUDIT_REPORT_WORKER_INTERVAL_SEC: ${ARGUS_AUDIT_REPORT_WORKER_INTERVAL_SEC:-60}
+      ARGUS_AUDIT_OUTBOX_LAG_ALERT_SEC: ${ARGUS_AUDIT_OUTBOX_LAG_ALERT_SEC:-300}
+      ARGUS_MCP_FABRIC_DRIFT_INTERVAL_SEC: ${ARGUS_MCP_FABRIC_DRIFT_INTERVAL_SEC:-300}
+      # Local single-admin demo escape hatch only. Production must keep the
+      # default false so restore approval preserves separation of duties.
+      ALLOW_SELF_APPROVE_FABRIC_RESTORE: ${ALLOW_SELF_APPROVE_FABRIC_RESTORE:-false}
+      # Optional detached, provider-signed trust receipt for the exact Evidence
+      # Pack and tenant scope. Public key/token files must be mounted read-only
+      # by a customer-owned Compose override or secrets driver.
+      ARGUS_EXTERNAL_ANCHOR_ENABLED: ${ARGUS_EXTERNAL_ANCHOR_ENABLED:-false}
+      ARGUS_EXTERNAL_ANCHOR_URL: ${ARGUS_EXTERNAL_ANCHOR_URL:-}
+      ARGUS_EXTERNAL_ANCHOR_PROVIDER: ${ARGUS_EXTERNAL_ANCHOR_PROVIDER:-}
+      ARGUS_EXTERNAL_ANCHOR_KEY_ID: ${ARGUS_EXTERNAL_ANCHOR_KEY_ID:-}
+      ARGUS_EXTERNAL_ANCHOR_PUBLIC_KEY_FILE: ${ARGUS_EXTERNAL_ANCHOR_PUBLIC_KEY_FILE:-}
+      ARGUS_EXTERNAL_ANCHOR_TOKEN_FILE: ${ARGUS_EXTERNAL_ANCHOR_TOKEN_FILE:-}
+      ARGUS_EXTERNAL_ANCHOR_KINDS: ${ARGUS_EXTERNAL_ANCHOR_KINDS:-worm_object,qualified_timestamp,transparency_log}
+      ARGUS_EXTERNAL_ANCHOR_TIMEOUT_MS: ${ARGUS_EXTERNAL_ANCHOR_TIMEOUT_MS:-10000}
+      ARGUS_EXTERNAL_ANCHOR_ALLOW_LOCAL_HTTP: ${ARGUS_EXTERNAL_ANCHOR_ALLOW_LOCAL_HTTP:-false}
+      ARGUS_EXTERNAL_ANCHOR_HTTP_HOSTS: ${ARGUS_EXTERNAL_ANCHOR_HTTP_HOSTS:-}
+      ARGUS_CODE_EMBEDDING_MODEL: ${ARGUS_CODE_EMBEDDING_MODEL:-${EMBEDDING_MODEL:-text-embedding-3-large}}
+      ARGUS_CODE_EMBEDDING_PROFILE: ${ARGUS_CODE_EMBEDDING_PROFILE:-plain}
+      ARGUS_CODE_EMBEDDING_BATCH_SIZE: ${ARGUS_CODE_EMBEDDING_BATCH_SIZE:-16}
+      ARGUS_CODE_EMBEDDING_MAX_DOCUMENTS: ${ARGUS_CODE_EMBEDDING_MAX_DOCUMENTS:-20000}
+      ARGUS_CODE_EMBEDDING_MAX_INPUT_BYTES: ${ARGUS_CODE_EMBEDDING_MAX_INPUT_BYTES:-24000}
+      ARGUS_CODE_EMBEDDING_TIMEOUT_MS: ${ARGUS_CODE_EMBEDDING_TIMEOUT_MS:-120000}
+      MEMORY_CONSOLIDATION_MODEL: ${MEMORY_CONSOLIDATION_MODEL:-gpt-4o-mini}
+
+      # ── Worker-mode Dev Agents ──────────────────────────────
+      ARGUS_TECHNICAL_EXPERIMENTS_ENABLED: ${ARGUS_TECHNICAL_EXPERIMENTS_ENABLED:-false}
+      ARGUS_DEV_GIT_BROKER_ENABLED: ${ARGUS_DEV_GIT_BROKER_ENABLED:-false}
+      AGENT_WORKSPACE_URL: ${AGENT_WORKSPACE_URL:-http://agent-workspace:3001}
+      WORKSPACE_SECRET: ${WORKSPACE_SECRET:-}
+      # HMAC secret for the workflow webhook-trigger receiver (audit #3).
+      # Unset → dev fail-open (warn), prod fail-closed (503). Set in prod.
+      ARGUS_WEBHOOK_SECRET: ${ARGUS_WEBHOOK_SECRET:-}
+      # HMAC secret for Gitea Actions workflow_run callbacks into Argus.
+      GITEA_CI_WEBHOOK_SECRET: ${GITEA_CI_WEBHOOK_SECRET:-}
+
+      # ── LangGraph (coding workflow orchestration) ──────────
+      LANGGRAPH_URL: ${LANGGRAPH_URL:-http://argus-dev:2025}
+      # Local reference wiring for the external Argus.Dev Solution Pack. A
+      # production deployment should point this at the separately managed pack.
+      ARGUS_SOLUTION_PACK_ENDPOINTS: ${ARGUS_SOLUTION_PACK_ENDPOINTS:-argus.dev=http://argus-dev:2025,argus.aiops=http://argus-aiops:2030}
+      ARGUS_SOLUTION_PACK_TOKEN_FILES: ${ARGUS_SOLUTION_PACK_TOKEN_FILES:-}
+      ARGUS_SOLUTION_PACK_REFRESH_SEC: ${ARGUS_SOLUTION_PACK_REFRESH_SEC:-60}
+      # Local single-host default reuses the already-required internal secret.
+      # Production should set a dedicated ARGUS_EXECUTION_GRANT_SECRET.
+      ARGUS_EXECUTION_GRANT_SECRET: ${ARGUS_EXECUTION_GRANT_SECRET:-${WORKSPACE_SECRET:-}}
+
+      # ── Golden Path demo/certification target identity ─────
+      # Non-secret identifiers only. Provider credentials stay in MCP Fabric.
+      ARGUS_GOLDEN_PATH_WORKSPACE_KEY: ${ARGUS_GOLDEN_PATH_WORKSPACE_KEY:-default}
+      ARGUS_GOLDEN_PATH_TENANT_KEY: ${ARGUS_GOLDEN_PATH_TENANT_KEY:-default}
+      ARGUS_GOLDEN_PATH_ENVIRONMENT: ${ARGUS_GOLDEN_PATH_ENVIRONMENT:-demo}
+      ARGUS_GOLDEN_PATH_WORKFLOW_NAME: ${ARGUS_GOLDEN_PATH_WORKFLOW_NAME:-golden_path_dev_triage}
+      ARGUS_GOLDEN_PATH_AGENT_NAME: ${ARGUS_GOLDEN_PATH_AGENT_NAME:-planner}
+      ARGUS_GOLDEN_PATH_PREFERRED_RUNTIME: ${ARGUS_GOLDEN_PATH_PREFERRED_RUNTIME:-hermes}
+      ARGUS_GOLDEN_PATH_RUNTIME_FALLBACK: ${ARGUS_GOLDEN_PATH_RUNTIME_FALLBACK:-true}
+      ARGUS_GOLDEN_PATH_GIT_BUNDLE: ${ARGUS_GOLDEN_PATH_GIT_BUNDLE:-gitea_local}
+      ARGUS_GOLDEN_PATH_GIT_REPOSITORY: ${ARGUS_GOLDEN_PATH_GIT_REPOSITORY:-argus/golden-path-demo}
+      ARGUS_GOLDEN_PATH_ISSUE_NUMBER: ${ARGUS_GOLDEN_PATH_ISSUE_NUMBER:-17}
+      ARGUS_GOLDEN_PATH_GIT_ORIGIN: ${ARGUS_GOLDEN_PATH_GIT_ORIGIN:-http://gitea:3000}
+      ARGUS_GOLDEN_PATH_NOTIFICATION_BUNDLE: ${ARGUS_GOLDEN_PATH_NOTIFICATION_BUNDLE:-slack_fixture}
+      ARGUS_GOLDEN_PATH_NOTIFICATION_DESTINATION: ${ARGUS_GOLDEN_PATH_NOTIFICATION_DESTINATION:-argus-golden-path}
+
+      # ── RAG Reranker (optional) ────────────────────────────
+      RAG_RERANKER_PROVIDER: ${RAG_RERANKER_PROVIDER:-none}
+      TEI_RERANKER_URL: ${TEI_RERANKER_URL:-http://tei-reranker}
+
+      # ── Langfuse (Tracing + RAG Eval Scoring) ─────────────────
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-http://langfuse:3100}
+
+      # ── Observability extras (alerts + canaries) ──────────────
+      # HMAC-SHA256 secret for external Alertmanager/Grafana and
+      # Elastic/OpenSearch connector envelopes. Required in production.
+      AIOPS_PROVIDER_WEBHOOK_SECRET: ${AIOPS_PROVIDER_WEBHOOK_SECRET:-}
+      ALERTS_WEBHOOK_URL:           ${ALERTS_WEBHOOK_URL:-}
+      ALERTS_WEBHOOK_FORMAT:        ${ALERTS_WEBHOOK_FORMAT:-slack}
+      ALERTS_COMPLIANCE_THRESHOLD:  ${ALERTS_COMPLIANCE_THRESHOLD:-70}
+      ALERTS_QUALITY_THRESHOLD:     ${ALERTS_QUALITY_THRESHOLD:-0.7}
+      CANARIES_ENABLED:             ${CANARIES_ENABLED:-0}
+      CANARIES_INTERVAL_MS:         ${CANARIES_INTERVAL_MS:-300000}
+      CANARIES_TIMEOUT_MS:          ${CANARIES_TIMEOUT_MS:-30000}
+      CANARIES_RETENTION_DAYS:      ${CANARIES_RETENTION_DAYS:-30}
+      CANARIES_AGENT_IDS:           ${CANARIES_AGENT_IDS:-}
+      CANARIES_API_KEY:             ${CANARIES_API_KEY:-}
+      CANARIES_BASE_URL:            ${CANARIES_BASE_URL:-http://localhost:3000}
+      # External CI provider canaries are opt-in. Targets/tokens remain in
+      # LangGraph; Core may only schedule persistence of the result evidence.
+      ARGUS_CI_CANARIES_SCHEDULED:   ${ARGUS_CI_CANARIES_SCHEDULED:-0}
+      ARGUS_CI_CANARIES_SCHEDULE_INTERVAL_MS: ${ARGUS_CI_CANARIES_SCHEDULE_INTERVAL_MS:-86400000}
+      COHERE_API_KEY: ${COHERE_API_KEY:-}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY:-}
+      RAG_RERANKER_COHERE_MODEL: ${RAG_RERANKER_COHERE_MODEL:-rerank-multilingual-v3.0}
+      RAG_RERANKER_VOYAGE_MODEL: ${RAG_RERANKER_VOYAGE_MODEL:-rerank-2}
+
+      # ── Gitea (Dynamic Tools) ──────────────────────────────
+      GITEA_TOKEN: ${GITEA_TOKEN:-}
+      GITEA_BASE_URL: ${GITEA_BASE_URL:-http://gitea:3000}
+      GITEA_PUBLIC_URL: ${GITEA_PUBLIC_URL:-http://localhost:${GITEA_PORT:-3005}}
+      GITEA_OWNER: ${GITEA_OWNER:-argus}
+      GITEA_REPO: ${GITEA_REPO:-argus-dev-sample}
+      ARGUS_DEV_DEMO_USER: ${ARGUS_DEV_DEMO_USER:-Alex}
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+
+  public-widget-demo-site:
+    profiles: ["public-widget-demo"]
+    image: nginx:1.27-alpine
+    ports:
+      - "127.0.0.1:${PUBLIC_WIDGET_DEMO_SITE_PORT:-4173}:80"
+    volumes:
+      - ./demo/public-widget-site:/usr/share/nginx/html:ro
+    depends_on:
+      mcp-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.25'
+
+  langgraph:
+    build:
+      context: ./packs/argus-dev
+      dockerfile: Dockerfile
+    ports:
+      - "${LANGGRAPH_PORT:-2025}:2025"
+    environment:
+      ARGUS_URL: "http://mcp-server:3000"
+      ARGUS_API_KEY: ${MCP_API_KEYS:?MCP_API_KEYS required}
+      ARGUS_A2A_PUBLIC_URL: ${ARGUS_A2A_PUBLIC_URL:-http://langgraph:2025}
+      # Agents are resolved by STABLE NAME via Argus GET /api/internal/agent-ids
+      # (see resolveAgentId in packs/argus-dev/src/argus.ts). No *_AGENT_ID needed —
+      # uncomment one only to force an explicit override (it wins over name resolution).
+      # PLANNER_AGENT_ID:   ${PLANNER_AGENT_ID:-3}
+      # CODER_AGENT_ID:     ${CODER_AGENT_ID:-2}
+      # REVIEWER_AGENT_ID:  ${REVIEWER_AGENT_ID:-4}
+      # KNOWLEDGE_AGENT_ID:  ${KNOWLEDGE_AGENT_ID:-5}
+      # RESEARCHER_AGENT_ID: ${RESEARCHER_AGENT_ID:-7}
+      MAX_REVIEW_RETRIES:  ${MAX_REVIEW_RETRIES:-4}   # raised from 2 → 4 per TDAD-paper findings
+
+      # PostgreSQL checkpointer — sessions survive restarts.
+      # Use service name "postgres" (not localhost) for in-network connection.
+      POSTGRES_CONNECTION_URL: postgresql://${POSTGRES_USER:-aiops}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aiops}
+
+      # Workspace-Sidecar (für git-diff Capture + finalize-Node: branch/commit/push)
+      AGENT_WORKSPACE_URL: ${AGENT_WORKSPACE_URL:-http://agent-workspace:3001}
+      WORKSPACE_SECRET: ${WORKSPACE_SECRET}
+
+      # Optional official Codex subscription runtime for the Argus.Dev Coder.
+      # This is a Codex-specific execution adapter, not a generic LLM proxy.
+      ARGUS_DEV_CODER_RUNTIME: ${ARGUS_DEV_CODER_RUNTIME:-argus}
+      ARGUS_CODEX_MODEL: ${ARGUS_CODEX_MODEL:-}
+      ARGUS_CODEX_REASONING_EFFORT: ${ARGUS_CODEX_REASONING_EFFORT:-high}
+      ARGUS_CODEX_TIMEOUT_SEC: ${ARGUS_CODEX_TIMEOUT_SEC:-900}
+
+      # Bitbucket (für PR-Erstellung im finalize-Node, optional)
+      BITBUCKET_TOKEN: ${BITBUCKET_TOKEN:-}
+      BITBUCKET_BASE_URL: ${BITBUCKET_BASE_URL:-}
+      BITBUCKET_PROJECT_KEY: ${BITBUCKET_PROJECT_KEY:-}
+      BITBUCKET_USER_SLUG:   ${BITBUCKET_USER_SLUG:-}
+      BITBUCKET_REPO_SLUG:   ${BITBUCKET_REPO_SLUG:-}
+      BITBUCKET_TARGET_BRANCH: ${BITBUCKET_TARGET_BRANCH:-master}
+      # Optional read-only live CI canaries. Disabled by default; target JSON
+      # references these environment variable names via token_env.
+      ARGUS_CI_CANARIES_ENABLED: ${ARGUS_CI_CANARIES_ENABLED:-0}
+      ARGUS_CI_CANARIES_MIN_INTERVAL_MS: ${ARGUS_CI_CANARIES_MIN_INTERVAL_MS:-900000}
+      ARGUS_CI_CANARIES_TIMEOUT_MS: ${ARGUS_CI_CANARIES_TIMEOUT_MS:-15000}
+      ARGUS_CI_CANARY_TARGETS: ${ARGUS_CI_CANARY_TARGETS:-}
+      GITHUB_CI_TOKEN: ${GITHUB_CI_TOKEN:-}
+      GITLAB_CI_TOKEN: ${GITLAB_CI_TOKEN:-}
+      JENKINS_CI_TOKEN: ${JENKINS_CI_TOKEN:-}
+      # Read-only CI canaries execute in LangGraph; keep provider credentials
+      # scoped to this runtime and never persist them in target JSON.
+      GITEA_TOKEN: ${GITEA_TOKEN:-}
+      GITEA_BASE_URL: ${GITEA_BASE_URL:-http://gitea:3000}
+      GITEA_OWNER: ${GITEA_OWNER:-argus}
+      GITEA_REPO: ${GITEA_REPO:-argus-dev-sample}
+      # Browser-facing URL for evidence links; internal API/clone traffic uses
+      # the provider credentials' base_url instead.
+      GITEA_PUBLIC_URL: ${GITEA_PUBLIC_URL:-http://localhost:${GITEA_PORT:-3005}}
+
+      # Langfuse (Tracing + Scoring — Keys aus Langfuse UI → Settings → API Keys)
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-http://langfuse:3100}
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2025/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mcp-server:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    command: ["sh", "-c", "exec redis-server $${REDIS_PASSWORD:+--requirepass $$REDIS_PASSWORD} --save 60 1 --loglevel warning"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping; else redis-cli ping; fi"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  tei-reranker:
+    # HuggingFace Text Embeddings Inference — hosts a cross-encoder model for
+    # RAG reranking. Self-hosted, no API quota, data stays on-prem.
+    # Default model: BAAI/bge-reranker-base (~280MB, ONNX-compatible, EN+DE).
+    # NOTE: TEI CPU image only loads models with ONNX exports. For multilingual
+    # excellence (e.g., bge-reranker-v2-m3) you'd need TEI GPU image or a
+    # Python sentence-transformers sidecar. base/large work fine on CPU.
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.7
+    command: ["--model-id", "${TEI_RERANKER_MODEL:-BAAI/bge-reranker-base}"]
+    environment:
+      HF_HOME: /data
+      # Explicit endpoint to avoid 'relative URL without a base' from older TEI
+      HF_ENDPOINT: https://huggingface.co
+      # Pass corporate proxy settings through if set on the host
+      HTTP_PROXY:  ${HTTP_PROXY:-}
+      HTTPS_PROXY: ${HTTPS_PROXY:-}
+      NO_PROXY:    ${NO_PROXY:-localhost,127.0.0.1}
+    volumes:
+      - tei-models:/data
+    expose:
+      - "80"
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 240s   # first-time model download (~1.1 GB ONNX)
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+
+  # Ephemeral Postgres for tests run inside agent-workspace
+  # (e.g. FastAPI repos with conftest.py that needs a DB connection).
+  # Data is in tmpfs — wiped on container restart.
+  agent-workspace-db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: postgres
+      # Disposable, network-internal test data only. Passwordless trust auth
+      # avoids exposing a credential to untrusted repository test processes.
+      POSTGRES_HOST_AUTH_METHOD: trust
+    # PostgreSQL 18 uses /var/lib/postgresql/<major>/docker as PGDATA.
+    # Mount the parent so the complete disposable cluster remains in tmpfs.
+    tmpfs:
+      - /var/lib/postgresql:rw,size=512m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  agent-workspace:
+    # Reap package-manager/test grandchildren after bounded process-group kills.
+    init: true
+    # Codex' Linux read-only sandbox creates an unprivileged user namespace.
+    # Docker's default seccomp profile blocks that syscall, so keep the
+    # container unprivileged/no-new-privileges while delegating syscall
+    # isolation to the nested Codex sandbox. Without this, Planner, Knowledge
+    # and Reviewer can answer but cannot inspect their checked-out workspace.
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=unconfined
+    build:
+      context: ./agent-workspace
+      args:
+        ARGUS_DEV_MULTILANG: ${ARGUS_DEV_MULTILANG:-true}
+    environment:
+      PORT: "3001"
+      ARGUS_TECHNICAL_EXPERIMENTS_ENABLED: ${ARGUS_TECHNICAL_EXPERIMENTS_ENABLED:-false}
+      ARGUS_SNAPSHOT_FILE_MIB: ${ARGUS_SNAPSHOT_FILE_MIB:-16}
+      ARGUS_SNAPSHOT_TOTAL_MIB: ${ARGUS_SNAPSHOT_TOTAL_MIB:-128}
+      WORKSPACE_SECRET: ${WORKSPACE_SECRET:?WORKSPACE_SECRET is required (>= 16 chars, e.g. openssl rand -hex 32)}
+      ARGUS_URL: ${ARGUS_URL:-http://mcp-server:3000}
+      # Codex uses a dedicated persistent home. Authentication is started by a
+      # platform admin from Settings -> Providers & Models in the Argus UI.
+      ARGUS_CODEX_ENABLED: ${ARGUS_CODEX_ENABLED:-true}
+      ARGUS_CODEX_MAX_CONCURRENT_RUNS: ${ARGUS_CODEX_MAX_CONCURRENT_RUNS:-2}
+      CODEX_HOME: /home/node/.codex
+      # Claude Code uses a separate persistent OAuth home. Authentication is
+      # started by a platform admin from Settings -> Providers & Models.
+      ARGUS_CLAUDE_ENABLED: ${ARGUS_CLAUDE_ENABLED:-true}
+      ARGUS_CLAUDE_MAX_CONCURRENT_RUNS: ${ARGUS_CLAUDE_MAX_CONCURRENT_RUNS:-1}
+      ARGUS_CLAUDE_MAX_TURNS: ${ARGUS_CLAUDE_MAX_TURNS:-25}
+      ARGUS_CLAUDE_MODEL: ${ARGUS_CLAUDE_MODEL:-}
+      ARGUS_CLAUDE_TIMEOUT_SEC: ${ARGUS_CLAUDE_TIMEOUT_SEC:-900}
+      ARGUS_CLAUDE_PERMISSION_MODE: ${ARGUS_CLAUDE_PERMISSION_MODE:-acceptEdits}
+      ARGUS_CLAUDE_ALLOWED_TOOLS: ${ARGUS_CLAUDE_ALLOWED_TOOLS:-Read,Write,Edit,Bash}
+      ARGUS_CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: ${ARGUS_CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS:-false}
+      CLAUDE_HOME: /home/node/.claude
+      # Git push credentials — used when Coder Agent pushes branches via workspace_exec
+      BITBUCKET_TOKEN: ${BITBUCKET_TOKEN:-}
+      BITBUCKET_BASE_URL: ${BITBUCKET_BASE_URL:-https://bitbucket.example.com}
+      GIT_AUTHOR_NAME: "Argus Dev Agent"
+      GIT_AUTHOR_EMAIL: "argus-dev-agent@example.com"
+      GIT_COMMITTER_NAME: "Argus Dev Agent"
+      GIT_COMMITTER_EMAIL: "argus-dev-agent@example.com"
+      # Test DB — Coder can use these env vars for pytest / integration tests
+      # Pattern: cd repo && POSTGRES_SERVER=$TEST_POSTGRES_HOST POSTGRES_USER=$TEST_POSTGRES_USER ... pytest
+      TEST_POSTGRES_HOST: agent-workspace-db
+      TEST_POSTGRES_PORT: "5432"
+      TEST_POSTGRES_USER: postgres
+      TEST_POSTGRES_DB: app
+      # Generic defaults used by production-like Python repositories during
+      # deterministic tests. This URL must stay credential-free; /exec exposes
+      # it only to the static project-test command profile.
+      DATABASE_URL: postgresql://postgres@agent-workspace-db:5432/app
+      FASTAPI_ENV: ${AGENT_WORKSPACE_FASTAPI_ENV:-development}
+      # Compatibility for pinned historical repositories. This affects only
+      # deterministic isolated-test commands, never general agent execution.
+      AGENT_WORKSPACE_NPM_LEGACY_PEER_DEPS: ${AGENT_WORKSPACE_NPM_LEGACY_PEER_DEPS:-true}
+      UV_CACHE_DIR: /workspace/.cache/uv
+      UV_PYTHON_INSTALL_DIR: /workspace/.cache/uv/python
+    depends_on:
+      agent-workspace-db:
+        condition: service_healthy
+    volumes:
+      - agent-workspace-data:/workspace
+      - technical-experiment-data:/runtime/technical-experiments
+      - workspace-python-data:/home/node/.local
+      - codex-auth:/home/node/.codex
+      - claude-auth:/home/node/.claude
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:3001/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${AGENT_WORKSPACE_MEMORY_LIMIT:-4G}
+          cpus: '${AGENT_WORKSPACE_CPU_LIMIT:-2.0}'
+
+  # ── ML-PII detection (P2.1, OPT-IN) ────────────────────────────
+  # Self-hosted Microsoft Presidio analyzer — NER-based PII detection that
+  # augments the regex floor in pii-pre-write-guard. No data leaves the boundary.
+  # Opt-in: only starts under the `pii` profile (so the image isn't pulled by
+  # default — protects corporate-proxy setups). To enable:
+  #   docker compose --profile pii up -d presidio-analyzer
+  #   PII_ML_ENABLED=true   (mcp-server reaches it at the URL below)
+  # The mcp-server hook degrades gracefully (regex-only) if this is down/disabled.
+  presidio-analyzer:
+    image: mcr.microsoft.com/presidio-analyzer:latest
+    profiles: ["pii"]
+    environment:
+      PORT: "3000"
+      HTTP_PROXY:  ${HTTP_PROXY:-}
+      HTTPS_PROXY: ${HTTPS_PROXY:-}
+      NO_PROXY:    ${NO_PROXY:-localhost,127.0.0.1}
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+volumes:
+  pgdata:
+  litellm-pgdata:
+  ollama-models:
+  redisdata:
+  agent-workspace-data:
+  technical-experiment-data:
+  workspace-python-data:
+  codex-auth:
+  claude-auth:
+  tei-models:
+  gitea-data:
+  gitea-runner-data:
+
+networks:
+  default:
+    name: argus-core-network
+
+# ── Entra ID Agent Identity Sidecar (Stage B+ only — uncomment when testing) ──
+#  entra-sidecar:
+#    image: mcr.microsoft.com/entra/agentid-sdk:1.0
+#    ports:
+#      - "5000:5000"
+#    environment:
+#      TENANT_ID: ${ENTRA_TENANT_ID}
+#      CLIENT_ID: ${ENTRA_CLIENT_ID}
+#      CLIENT_SECRET: ${ENTRA_CLIENT_SECRET}
+#      GRAPH_BASE_URL: https://graph.microsoft.com/beta
+#    networks: [default]
+#    restart: unless-stopped

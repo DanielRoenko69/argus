@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "sourceCommit": "d64d0ecb0c96cbcef619f22870df1b3bd3862378",
+  "manifests": [
+    [
+      "pyproject.toml",
+      "f2a5969c7ea479098d9b975abfff411790af91944847d6c4b7409dfe206c0a78"
+    ],
+    [
+      "requirements.txt",
+      "2835532fc73114dc11dc1b24f9817e6cb554086537c30630937fae4e4fccfa5f"
+    ]
+  ],
+  "manifestSha256": "5b913845862e217799f10afd6ef69d355f6d1758cc8bf17c70a0b347916b9a7b",
+  "languages": [
+    "python"
+  ],
+  "id": "demo-gem-python312-v1",
+  "pythonVersion": "3.12",
+  "imports": [
+    "pytest",
+    "packaging",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "gymnasium",
+    "gym_electric_motor"
+  ]
+}

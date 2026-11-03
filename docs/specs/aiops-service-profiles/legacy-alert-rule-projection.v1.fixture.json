@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "kind": "aiops-legacy-investigation-context",
+  "source": "native-alert-rule-v0",
+  "legacy": {
+    "alertRuleId": 17,
+    "bundleIds": [11],
+    "resourceScope": {
+      "kind": "kubernetes",
+      "backendId": 17,
+      "targetId": "argus-aiops-kind",
+      "namespace": "argus-demo"
+    },
+    "service": "checkout-api",
+    "environment": "production"
+  },
+  "resolved": {
+    "serviceName": "checkout-api",
+    "environment": "production",
+    "bundleIds": [11],
+    "runtimeRequired": true
+  },
+  "warnings": [
+    "Legacy alert configuration has no immutable service profile revision and remains read-only during migration."
+  ]
+}

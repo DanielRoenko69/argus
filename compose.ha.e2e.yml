@@ -1,0 +1,166 @@
+# Multi-replica overlay for the deterministic E2E stack.
+#
+# Usage:
+#   docker compose -p argus-ha -f compose.e2e.yml -f compose.ha.e2e.yml \
+#     up --build --detach postgres redis fake-openai fake-anthropic fake-mcp fake-workspace callback-capture keycloak argus-a argus-b
+#
+# Both replicas share the same PostgreSQL/Redis and security material inherited
+# from compose.e2e.yml. They intentionally expose different host ports so the
+# continuity script can move one session between replicas without a gateway.
+
+x-argus-environment: &argus-environment
+  PORT: "3000"
+  NODE_ENV: test
+  LOG_LEVEL: info
+  MCP_API_KEYS: argus-ha-service-key
+  SESSION_SECRET: argus-ha-session-secret-at-least-32-characters
+  DB_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+  POSTGRES_ENABLED: "true"
+  POSTGRES_CONNECTION_URL: postgresql://argus_e2e:argus_e2e_password@postgres:5432/argus_e2e
+  REDIS_ENABLED: "true"
+  REDIS_URL: redis://redis:6379
+  LOCAL_AUTH_ENABLED: "true"
+  CHAT_SPA_ENABLED: "true"
+  ARGUS_INSTALL_STARTER_AGENTS: "false"
+  OPENAI_COMPAT_BASE_URL: http://fake-openai:4000/v1
+  OPENAI_COMPAT_API_KEY: ""
+  ALLOW_EMPTY_OPENAI_COMPAT_API_KEY: "true"
+  LLM_PROVIDER_OVERRIDES: '{"e2e-chat":"openai-compatible","e2e-embedding":"openai-compatible"}'
+  EMBEDDING_MODEL: e2e-embedding
+  MEMORY_CONSOLIDATION_MODEL: e2e-chat
+  LLM_REQUEST_TIMEOUT_MS: "10000"
+  RAG_RERANKER_PROVIDER: none
+  AI_TRANSPARENCY_NOTICE_ENABLED: "true"
+  PUBLIC_WIDGET_ENABLED: "false"
+  MAX_AGENT_SESSION_SECONDS: "60"
+  K8S_ENABLED: "false"
+  GRAFANA_ENABLED: "false"
+  OPENSEARCH_ENABLED: "false"
+  LANGFUSE_PUBLIC_KEY: ""
+  LANGFUSE_SECRET_KEY: ""
+  WORKSPACE_SECRET: argus-ha-workspace-secret
+  AGENT_WORKSPACE_URL: http://fake-workspace:4200
+  LANGGRAPH_URL: http://127.0.0.1:9
+  ARGUS_SOLUTION_PACK_ENDPOINTS: ""
+  ARGUS_SOLUTION_PACK_TOKEN_FILES: ""
+  ARGUS_EXECUTION_GRANT_SECRET: argus-ha-execution-grant-signing-secret-at-least-32-characters
+  CANARIES_ENABLED: "0"
+
+  # The callback is first captured at a non-Argus endpoint. The HA OIDC
+  # journey then sends that untouched code/state pair through replica B.
+  OIDC_SSO_ENABLED: "true"
+  OIDC_PROVIDER_NAME: Keycloak
+  OIDC_AUTHORIZATION_URL: http://keycloak:8080/realms/argus-e2e/protocol/openid-connect/auth
+  OIDC_TOKEN_URL: http://keycloak:8080/realms/argus-e2e/protocol/openid-connect/token
+  OIDC_ISSUER: http://keycloak:8080/realms/argus-e2e
+  OIDC_JWKS_URI: http://keycloak:8080/realms/argus-e2e/protocol/openid-connect/certs
+  OIDC_CLIENT_ID: argus-e2e
+  OIDC_CLIENT_SECRET: argus-e2e-oidc-secret
+  OIDC_REDIRECT_URI: http://callback-capture:9999/auth/oidc/callback
+  OIDC_DEFAULT_ROLE: viewer
+  OIDC_GROUP_MAP: argus-platform-admins:platform_admin,argus-operations-admins:operations_admin,argus-developers:developer,argus-agent-operators:agent_operator,argus-chat-users:chat_user
+
+services:
+  fake-openai:
+    ports:
+      - "${ARGUS_FAULT_HOST_PORT:-4000}:4000"
+
+  fake-anthropic:
+    image: node:20-alpine
+    working_dir: /fixtures
+    command: ["node", "fake-anthropic.mjs"]
+    volumes:
+      - ./e2e/fixtures:/fixtures:ro
+    ports:
+      - "${ARGUS_ANTHROPIC_FAULT_HOST_PORT:-4100}:4100"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4100/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  callback-capture:
+    image: node:20-alpine
+    working_dir: /fixtures
+    command: ["node", "callback-capture.mjs"]
+    volumes:
+      - ./e2e/fixtures:/fixtures:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9999/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  argus-a:
+    build: .
+    ports:
+      - "3111:3000"
+    environment:
+      <<: *argus-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      fake-openai:
+        condition: service_healthy
+      fake-workspace:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      callback-capture:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  argus-b:
+    build: .
+    ports:
+      - "3112:3000"
+    environment:
+      <<: *argus-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      fake-openai:
+        condition: service_healthy
+      fake-workspace:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      callback-capture:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  playwright-ha:
+    image: mcr.microsoft.com/playwright:v1.55.0-noble
+    working_dir: /work/e2e
+    init: true
+    environment:
+      ARGUS_HA_OIDC: "1"
+      ARGUS_HA_PRIMARY_BASE_URL: http://argus-a:3000
+      ARGUS_HA_SECONDARY_BASE_URL: http://argus-b:3000
+      CI: "true"
+    volumes:
+      - ./e2e:/work/e2e
+    command: ["sh", "-c", "npm ci --no-audit --no-fund && npx playwright test tests/ha-oidc-callback.spec.ts"]
+    depends_on:
+      argus-a:
+        condition: service_healthy
+      argus-b:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      callback-capture:
+        condition: service_healthy

@@ -1,0 +1,116 @@
+{
+  "realm": "argus-e2e",
+  "enabled": true,
+  "displayName": "Argus E2E Identity",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "clients": [
+    {
+      "clientId": "argus-e2e",
+      "name": "Argus E2E",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "argus-e2e-oidc-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "publicClient": false,
+      "redirectUris": [
+        "http://argus:3000/auth/oidc/callback",
+        "http://argus-a:3000/auth/oidc/callback",
+        "http://argus-b:3000/auth/oidc/callback",
+        "http://127.0.0.1:3111/auth/oidc/callback",
+        "http://127.0.0.1:3112/auth/oidc/callback",
+        "http://callback-capture:9999/auth/oidc/callback"
+      ],
+      "webOrigins": ["http://argus:3000", "http://argus-a:3000", "http://argus-b:3000"],
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "Argus groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    }
+  ],
+  "groups": [
+    { "name": "argus-platform-admins" },
+    { "name": "argus-operations-admins" },
+    { "name": "argus-developers" },
+    { "name": "argus-agent-operators" },
+    { "name": "argus-chat-users" },
+    { "name": "argus-e2e-observability" }
+  ],
+  "users": [
+    {
+      "username": "argus-platform-admin",
+      "email": "platform-admin@argus.test",
+      "firstName": "Argus",
+      "lastName": "Platform Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": ["/argus-platform-admins"],
+      "credentials": [{ "type": "password", "value": "ArgusE2e42!", "temporary": false }]
+    },
+    {
+      "username": "argus-operations-admin",
+      "email": "operations-admin@argus.test",
+      "firstName": "Argus",
+      "lastName": "Operations Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": ["/argus-operations-admins"],
+      "credentials": [{ "type": "password", "value": "ArgusE2e42!", "temporary": false }]
+    },
+    {
+      "username": "argus-developer",
+      "email": "developer@argus.test",
+      "firstName": "Argus",
+      "lastName": "Developer",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": ["/argus-developers", "/argus-e2e-observability"],
+      "credentials": [{ "type": "password", "value": "ArgusE2e42!", "temporary": false }]
+    },
+    {
+      "username": "argus-agent-operator",
+      "email": "agent-operator@argus.test",
+      "firstName": "Argus",
+      "lastName": "Agent Operator",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": ["/argus-agent-operators"],
+      "credentials": [{ "type": "password", "value": "ArgusE2e42!", "temporary": false }]
+    },
+    {
+      "username": "argus-viewer",
+      "email": "viewer@argus.test",
+      "firstName": "Argus",
+      "lastName": "Viewer",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": [],
+      "credentials": [{ "type": "password", "value": "ArgusE2e42!", "temporary": false }]
+    },
+    {
+      "username": "argus-chat-user",
+      "email": "chat-user@argus.test",
+      "firstName": "Argus",
+      "lastName": "Chat User",
+      "enabled": true,
+      "emailVerified": true,
+      "groups": ["/argus-chat-users"],
+      "credentials": [{ "type": "password", "value": "ArgusE2e42!", "temporary": false }]
+    }
+  ]
+}

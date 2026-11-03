@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "kind": "ai-compliance-dossier-manifest",
+  "dossierId": "20000000-0000-4000-8000-000000000001",
+  "dossierSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "generatedAt": "2026-09-09T10:00:00.000Z",
+  "generatedBy": {
+    "actorType": "user",
+    "actorId": "alex",
+    "displayName": "Alex"
+  },
+  "assessmentStatus": "ready_for_independent_review",
+  "aiSystem": {
+    "aiSystemId": "10000000-0000-4000-8000-000000000001",
+    "revisionId": "10000000-0000-4000-8000-000000000002",
+    "revision": 3,
+    "revisionSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "displayName": "Argus Dev governed coding assistant",
+    "classification": "minimal_or_no_risk"
+  },
+  "scope": {
+    "workspaceId": "default",
+    "tenantId": "design-partner-a",
+    "environments": ["production"],
+    "from": "2026-08-10T00:00:00.000Z",
+    "to": "2026-09-09T09:59:59.999Z"
+  },
+  "sourceEvidencePack": {
+    "evidencePackId": "20000000-0000-4000-8000-000000000002",
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "checkpointId": "20000000-0000-4000-8000-000000000003",
+    "verification": "verified_with_declared_gaps"
+  },
+  "controlCoverage": {
+    "applicable": 18,
+    "satisfied": 16,
+    "open": 1,
+    "exceptions": 1,
+    "expired": 0
+  },
+  "sections": [
+    {
+      "sectionId": "identity-classification",
+      "title": "System identity, roles and classification",
+      "state": "complete",
+      "evidenceCount": 3,
+      "gapCount": 0,
+      "evidence": [
+        {
+          "evidenceType": "document",
+          "evidenceId": "ai-system-revision-3",
+          "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+        }
+      ]
+    },
+    {
+      "sectionId": "oversight-evaluations",
+      "title": "Human oversight and release evaluations",
+      "state": "complete",
+      "evidenceCount": 7,
+      "gapCount": 0,
+      "evidence": [
+        {
+          "evidenceType": "evaluation",
+          "evidenceId": "release-eval-20260909-12",
+          "sha256": "9999999999999999999999999999999999999999999999999999999999999999"
+        },
+        {
+          "evidenceType": "training_record",
+          "evidenceId": "oversight-training-2026-q3",
+          "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ]
+    },
+    {
+      "sectionId": "runtime-evidence",
+      "title": "Runtime logs and post-market monitoring",
+      "state": "complete_with_gaps",
+      "evidenceCount": 42,
+      "gapCount": 2,
+      "evidence": [
+        {
+          "evidenceType": "evidence_pack",
+          "evidenceId": "20000000-0000-4000-8000-000000000002",
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "format": "pdfa",
+      "filename": "argus-ai-compliance-dossier-20000000.pdf",
+      "mediaType": "application/pdf",
+      "bytes": 248320,
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    {
+      "format": "json",
+      "filename": "argus-ai-compliance-dossier-20000000.json",
+      "mediaType": "application/json",
+      "bytes": 602114,
+      "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "format": "signature",
+      "filename": "argus-ai-compliance-dossier-20000000.sig",
+      "mediaType": "application/octet-stream",
+      "bytes": 64,
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "externalAnchors": [
+    {
+      "kind": "worm_object",
+      "provider": "Customer-owned immutable object store",
+      "reference": "worm://compliance/dossiers/20000000/version/7",
+      "anchoredAt": "2026-09-09T10:00:10.000Z",
+      "verification": "verified"
+    }
+  ],
+  "declaredGaps": [
+    {
+      "gapId": "qualified-timestamp-pending",
+      "severity": "medium",
+      "description": "The dossier has a verified WORM anchor but no qualified electronic timestamp.",
+      "ownerRole": "provider",
+      "dueAt": "2026-09-30T12:00:00.000Z"
+    },
+    {
+      "gapId": "legacy-producer-coverage",
+      "severity": "medium",
+      "description": "Two legacy privileged producer families are not yet represented as canonical audit events.",
+      "ownerRole": "argus_platform",
+      "dueAt": "2026-10-15T12:00:00.000Z"
+    }
+  ],
+  "claimBoundary": "This dossier is ready for independent review and reports declared gaps. It is not an automatic EU AI Act conformity declaration."
+}

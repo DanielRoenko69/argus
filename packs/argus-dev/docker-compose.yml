@@ -1,0 +1,46 @@
+name: argus-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-argus_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-argus_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-argus-dev-local-only}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-argus_dev} -d ${POSTGRES_DB:-argus_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  argus-dev:
+    image: ${ARGUS_DEV_IMAGE:-argus-dev:local}
+    build:
+      context: .
+    ports:
+      - "${ARGUS_DEV_PORT:-2025}:2025"
+    environment:
+      NODE_ENV: production
+      PORT: 2025
+      POSTGRES_CONNECTION_URL: postgresql://${POSTGRES_USER:-argus_dev}:${POSTGRES_PASSWORD:-argus-dev-local-only}@postgres:5432/${POSTGRES_DB:-argus_dev}
+      ARGUS_URL: ${ARGUS_URL:-http://host.docker.internal:3000}
+      ARGUS_API_KEY: ${ARGUS_API_KEY:-}
+      ARGUS_A2A_PUBLIC_URL: ${ARGUS_A2A_PUBLIC_URL:-http://localhost:2025}
+      AGENT_WORKSPACE_URL: ${AGENT_WORKSPACE_URL:-http://host.docker.internal:3001}
+      WORKSPACE_SECRET: ${WORKSPACE_SECRET:-argus-dev-local-only}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2025/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:

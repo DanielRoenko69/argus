@@ -1,0 +1,47 @@
+jenkins:
+  systemMessage: "Argus production-like CI proof — governed by Workforce SSO"
+  numExecutors: 1
+  mode: NORMAL
+  securityRealm:
+    oic:
+      clientId: "argus-jenkins"
+      clientSecret: "argus-jenkins-client-secret"
+      serverConfiguration:
+        # Explicit endpoints avoid the upstream oic-auth 4.668+ well-known
+        # ResourceRetriever regression while preserving the real OIDC flow.
+        manual:
+          authorizationServerUrl: "http://localhost:8180/realms/argus-mfa-demo/protocol/openid-connect/auth"
+          tokenServerUrl: "http://keycloak-mfa:8080/realms/argus-mfa-demo/protocol/openid-connect/token"
+          userInfoServerUrl: "http://keycloak-mfa:8080/realms/argus-mfa-demo/protocol/openid-connect/userinfo"
+          jwksServerUrl: "http://keycloak-mfa:8080/realms/argus-mfa-demo/protocol/openid-connect/certs"
+          endSessionUrl: "http://localhost:8180/realms/argus-mfa-demo/protocol/openid-connect/logout"
+          issuer: "http://localhost:8180/realms/argus-mfa-demo"
+          scopes: "openid profile email"
+          tokenAuthMethod: "client_secret_post"
+          useRefreshTokens: true
+      userNameField: "preferred_username"
+      fullNameFieldName: "name"
+      emailFieldName: "email"
+      groupsFieldName: "groups"
+      logoutFromOpenidProvider: true
+      rootURLFromRequest: false
+      allowTokenAccessWithoutOicSession: true
+  authorizationStrategy:
+    globalMatrix:
+      entries:
+        - group:
+            name: "argus-platform-admins"
+            permissions:
+              - "Overall/Administer"
+        - user:
+            name: "argus-service"
+            permissions:
+              - "Overall/Read"
+              - "Job/Build"
+              - "Job/Read"
+              - "View/Read"
+  disableRememberMe: true
+
+unclassified:
+  location:
+    url: "http://localhost:8081/"

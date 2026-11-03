@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "fixture",
+  "scenarios": [
+    {
+      "id": "api_target",
+      "phase": "E2",
+      "input": {
+        "runtime": "argus",
+        "model_alias": "fixture-model"
+      },
+      "expected": {
+        "snapshot": "frozen_v1",
+        "startable": true,
+        "reason": "EVALUATION_READY"
+      }
+    },
+    {
+      "id": "runtime_mismatch",
+      "phase": "E1",
+      "input": {
+        "runtime": "codex",
+        "profile_model": "profile-model",
+        "requested_model": "different-model"
+      },
+      "expected": {
+        "status": 400,
+        "code": "EVALUATION_MODEL_MISMATCH"
+      }
+    },
+    {
+      "id": "preflight_no_dataset",
+      "phase": "E1",
+      "input": {
+        "dataset_status": "draft"
+      },
+      "expected": {
+        "status": 409,
+        "code": "EVALUATION_DATASET_NOT_FROZEN"
+      }
+    },
+    {
+      "id": "foreign_workspace",
+      "phase": "E1",
+      "input": {
+        "tenant": "other",
+        "global_agent": 1
+      },
+      "expected": {
+        "status": 404,
+        "code": "EVALUATION_REFERENCE_NOT_FOUND"
+      }
+    },
+    {
+      "id": "complete_comparison",
+      "phase": "E2",
+      "input": {
+        "expected": 12,
+        "baseline_completed": 12,
+        "candidate_completed": 12,
+        "compatible": true
+      },
+      "expected": {
+        "eligible": true
+      }
+    },
+    {
+      "id": "missing_cost",
+      "phase": "E2",
+      "input": {
+        "costs": [
+          null,
+          null
+        ]
+      },
+      "expected": {
+        "cost_usd": null,
+        "measured_cases": 0
+      }
+    },
+    {
+      "id": "quality_regression",
+      "phase": "E2",
+      "input": {
+        "baseline_score": 1,
+        "candidate_score": 0.5,
+        "max_drop": 0.05
+      },
+      "expected": {
+        "status": "failed"
+      }
+    },
+    {
+      "id": "interrupted",
+      "phase": "E3",
+      "input": {
+        "status": "running",
+        "worker_lost": true,
+        "provider_outcome": "unknown"
+      },
+      "expected": {
+        "status": "interrupted",
+        "automatic_provider_retry": false
+      }
+    },
+    {
+      "id": "missing_case",
+      "phase": "E2",
+      "input": {
+        "expected": 12,
+        "candidate_completed": 11
+      },
+      "expected": {
+        "status": "inconclusive",
+        "promotion": false
+      }
+    }
+  ]
+}

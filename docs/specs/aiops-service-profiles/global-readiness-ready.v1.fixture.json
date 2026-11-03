@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "kind": "aiops-readiness",
+  "state": "ready",
+  "presentation": "connected_summary",
+  "generatedAt": "2026-09-08T10:05:00.000Z",
+  "pack": {
+    "state": "ready",
+    "version": "0.3.0"
+  },
+  "eligibleBundleCount": 1,
+  "availableLanes": ["metrics", "logs", "traces", "runtime", "topology"],
+  "primaryConnection": {
+    "bundleId": 11,
+    "bundleName": "argus-aiops-observe",
+    "lanes": ["metrics", "logs", "traces", "runtime", "topology"],
+    "certifiedTargetCount": 1,
+    "checkedAt": "2026-09-08T10:04:58.000Z"
+  },
+  "profiles": {
+    "active": 2,
+    "ready": 1,
+    "degraded": 1,
+    "blocked": 0
+  },
+  "issues": [],
+  "recoveryActions": [
+    {
+      "id": "manage-connections",
+      "label": "Manage connections",
+      "kind": "manage_connection",
+      "href": "/mcp-fabric"
+    },
+    {
+      "id": "add-environment",
+      "label": "Add environment",
+      "kind": "add_environment",
+      "href": "/solutions/argus.aiops?setup=environment"
+    }
+  ]
+}

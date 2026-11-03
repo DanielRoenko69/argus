@@ -1,0 +1,36 @@
+{
+  "schema": "argus.code-retrieval-evaluation.v1",
+  "repositoryKey": "argus/argus-dev-sample",
+  "cases": [
+    {
+      "id": "build-metadata-ticket",
+      "query": "Add a build information endpoint returning service and version from package.json; update src/app.js and test/app.test.js",
+      "expectedFiles": ["package.json", "src/app.js", "test/app.test.js"],
+      "limit": 4
+    },
+    {
+      "id": "health-contract",
+      "query": "health endpoint identifies the service and returns a request id",
+      "expectedFiles": ["src/app.js", "test/app.test.js"],
+      "limit": 4
+    },
+    {
+      "id": "service-tier-filter",
+      "query": "service catalog can be filtered by critical tier",
+      "expectedFiles": ["src/app.js", "test/app.test.js"],
+      "limit": 4
+    },
+    {
+      "id": "unknown-route",
+      "query": "unknown routes return a JSON 404 response",
+      "expectedFiles": ["src/app.js", "test/app.test.js"],
+      "limit": 4
+    },
+    {
+      "id": "package-identity",
+      "query": "package name version scripts and module type",
+      "expectedFiles": ["package.json"],
+      "limit": 4
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+# Local-lab fallback for hosts where Kind's nftables-based policy controller
+# cannot program the kernel. This does not replace kindnet CNI or kube-proxy;
+# kube-router runs only its iptables NetworkPolicy firewall controller.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argus-network-policy-controller
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: argus-network-policy-controller
+    app.kubernetes.io/part-of: argus-aiops-lab
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argus-network-policy-controller
+  labels:
+    app.kubernetes.io/name: argus-network-policy-controller
+    app.kubernetes.io/part-of: argus-aiops-lab
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "pods", "services", "nodes", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argus-network-policy-controller
+  labels:
+    app.kubernetes.io/name: argus-network-policy-controller
+    app.kubernetes.io/part-of: argus-aiops-lab
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argus-network-policy-controller
+subjects:
+  - kind: ServiceAccount
+    name: argus-network-policy-controller
+    namespace: kube-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: argus-network-policy-controller
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: argus-network-policy-controller
+    app.kubernetes.io/part-of: argus-aiops-lab
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argus-network-policy-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: argus-network-policy-controller
+        app.kubernetes.io/part-of: argus-aiops-lab
+    spec:
+      priorityClassName: system-node-critical
+      serviceAccountName: argus-network-policy-controller
+      hostNetwork: true
+      hostPID: true
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: kube-router
+          image: docker.io/cloudnativelabs/kube-router:v2.10.0@sha256:0991f2cc7aaabe107b51c0c554d6b843f0483fd319b94f437fab638470c47c22
+          imagePullPolicy: IfNotPresent
+          args:
+            - --enable-cni=false
+            - --run-router=false
+            - --run-firewall=true
+            - --run-service-proxy=false
+            - --enable-overlay=false
+            - --enable-pod-egress=false
+            - --metrics-port=0
+            - --v=1
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 20244
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 192Mi
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: xtables-lock
+              mountPath: /run/xtables.lock
+      volumes:
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+        - name: xtables-lock
+          hostPath:
+            path: /run/xtables.lock
+            type: FileOrCreate

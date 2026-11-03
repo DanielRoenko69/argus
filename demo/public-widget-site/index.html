@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Argus governed agent operations demo website">
+  <title>Argus · Governed agent operations</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070b13;
+      --panel: rgba(17, 24, 39, .72);
+      --line: rgba(148, 163, 184, .16);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --violet: #8b5cf6;
+      --teal: #4de5cf;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 80% 12%, rgba(139, 92, 246, .18), transparent 31rem),
+        radial-gradient(circle at 12% 70%, rgba(77, 229, 207, .09), transparent 28rem),
+        var(--bg);
+    }
+    body::before {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      content: "";
+      opacity: .17;
+      background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, black, transparent 78%);
+    }
+    header, main, footer { position: relative; z-index: 1; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 24px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; letter-spacing: .14em; }
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border: 1px solid rgba(139, 92, 246, .42);
+      border-radius: 11px;
+      color: #a78bfa;
+      background: rgba(139, 92, 246, .12);
+    }
+    .brand b { display: block; font-size: 14px; }
+    .brand small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; letter-spacing: .12em; }
+    .runtime { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+    .runtime i { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 16px var(--teal); }
+    main { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 84px 0 72px; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); gap: 72px; align-items: center; }
+    .eyebrow { color: #a78bfa; font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { max-width: 780px; margin: 18px 0 24px; font-size: clamp(48px, 7vw, 88px); line-height: .98; letter-spacing: -.055em; }
+    h1 span { color: transparent; background: linear-gradient(105deg, #c4b5fd, var(--teal)); background-clip: text; }
+    .lede { max-width: 690px; color: #b9c4d4; font-size: 19px; line-height: 1.65; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+    .button { padding: 12px 17px; border: 1px solid var(--line); border-radius: 10px; color: var(--text); text-decoration: none; font-size: 13px; font-weight: 700; background: rgba(15, 23, 42, .72); }
+    .button.primary { border-color: rgba(139, 92, 246, .55); background: var(--violet); }
+    .demo-card { padding: 1px; border-radius: 18px; background: linear-gradient(145deg, rgba(139, 92, 246, .7), rgba(77, 229, 207, .2), rgba(148, 163, 184, .13)); box-shadow: 0 24px 80px rgba(0, 0, 0, .3); }
+    .demo-card > div { padding: 26px; border-radius: 17px; background: rgba(8, 13, 24, .96); }
+    .demo-card small { color: var(--teal); font-size: 10px; font-weight: 800; letter-spacing: .14em; }
+    .demo-card h2 { margin: 12px 0 8px; font-size: 25px; }
+    .demo-card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .flow { display: grid; gap: 10px; margin-top: 24px; }
+    .flow div { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 10px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: rgba(15, 23, 42, .64); }
+    .flow i { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; color: var(--teal); background: rgba(77, 229, 207, .09); font-style: normal; font-size: 11px; }
+    .flow b { font-size: 12px; }
+    .flow span { color: var(--muted); font-size: 10px; }
+    .modules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 84px; }
+    .module { min-height: 180px; padding: 23px; border: 1px solid var(--line); border-radius: 15px; background: var(--panel); backdrop-filter: blur(12px); }
+    .module strong { display: block; margin: 18px 0 8px; font-size: 18px; }
+    .module p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .module em { color: #a78bfa; font-size: 10px; font-style: normal; font-weight: 800; letter-spacing: .13em; }
+    footer { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 24px 0 34px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .widget-hint { position: fixed; right: 88px; bottom: 30px; z-index: 2; color: var(--muted); font-size: 11px; }
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; gap: 42px; }
+      .modules { grid-template-columns: 1fr; margin-top: 54px; }
+      .widget-hint { display: none; }
+      main { padding-top: 54px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.7"/></svg>
+      </span>
+      <span><b>ARGUS</b><small>AGENT OPERATIONS</small></span>
+    </div>
+    <span class="runtime"><i></i> Local governed demo</span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <span class="eyebrow">One control plane · many capabilities</span>
+        <h1>Build agents.<br><span>Keep control.</span></h1>
+        <p class="lede">Argus connects models, agents, knowledge and enterprise tools behind one governed, self-hosted control plane. Teams automate real work without giving an LLM unrestricted access to their systems.</p>
+        <div class="actions">
+          <a class="button primary" href="http://localhost:3000/home">Open Argus Console</a>
+          <a class="button" href="http://localhost:3000/build/public-widgets">Manage public assistant</a>
+        </div>
+      </div>
+      <aside class="demo-card">
+        <div>
+          <small>LIVE EMBED PROOF</small>
+          <h2>A real public Argus agent</h2>
+          <p>This page is served independently on port 4173. The assistant is loaded from Argus Core on port 3000 and remains protected by an exact origin policy.</p>
+          <div class="flow">
+            <div><i>01</i><b>External website</b><span>:4173</span></div>
+            <div><i>02</i><b>Argus widget loader</b><span>:3000</span></div>
+            <div><i>03</i><b>Isolated demo agent</b><span>no tools</span></div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="modules" aria-label="Argus modules">
+      <article class="module"><em>ARGUS CORE</em><strong>Governed foundation</strong><p>Identity, models, MCP Fabric, bundles, policies, approvals, audit evidence and observable agent execution.</p></article>
+      <article class="module"><em>ARGUS DEV</em><strong>Agentic delivery</strong><p>Ticket-to-pull-request workflows with planning, code intelligence, reviews, human feedback and CI handoff.</p></article>
+      <article class="module"><em>ARGUS AIOPS</em><strong>Evidence-first operations</strong><p>Correlate alerts, telemetry, topology and Kubernetes evidence before proposing controlled remediation.</p></article>
+    </section>
+  </main>
+
+  <footer>Argus local prototype · The public assistant has no access to internal tools, credentials or private knowledge.</footer>
+  <span class="widget-hint">Try the assistant →</span>
+
+  <script src="http://localhost:3000/assets/argus-widget.js"
+          data-slug="argus-public-demo"
+          data-argus-origin="http://localhost:3000"
+          data-accent="#8b5cf6"
+          data-title="Ask Argus"
+          data-greeting="Hi! Ask me what Argus, Argus Dev or Argus AIOps can do."
+          data-placeholder="Ask Argus a question..."
+          data-icon-url="/argus-mark.svg"
+          data-icon-alt="Open the Argus assistant"
+          data-position="right"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# Explicit, coordinated opt-in AFTER the complete existing overlay list.
+# This replaces only the disposable test DB authentication, not the Core DB.
+# No host ports, no shared postgres credential in the agent-workspace.
+services:
+  mcp-server:
+    image: argus-core-workspace:20261001-user-bound-keys
+    environment:
+      ARGUS_WORKSPACE_SESSIONS_ENABLED: "true"
+      ARGUS_DEV_GRANT_RENEWAL_ENABLED: "true"
+  argus-dev:
+    image: argus-dev-workspace:20260930-capacity
+    environment:
+      ARGUS_WORKSPACE_SESSIONS_ENABLED: "true"
+      ARGUS_DEV_GRANT_RENEWAL_ENABLED: "true"
+  agent-workspace:
+    image: argus-workspace-session:20260930-capacity
+    environment:
+      ARGUS_WORKSPACE_SESSIONS_ENABLED: "true"
+      TEST_POSTGRES_HOST: ""
+      TEST_POSTGRES_USER: ""
+      TEST_POSTGRES_DB: ""
+      DATABASE_URL: ""
+  stack-runner:
+    image: argus-stack-controller-workspace:20260930-capacity-recovery
+    environment:
+      ARGUS_WORKSPACE_SESSIONS_ENABLED: "true"
+      # Stopped, retained workspaces consume these disk slots; execution remains serial.
+      ARGUS_WORKSPACE_MAX_SESSIONS: ${ARGUS_WORKSPACE_MAX_SESSIONS:-16}
+      ARGUS_WORKSPACE_DATABASE_CONTAINER: ${COMPOSE_PROJECT_NAME:-argus-core}-agent-workspace-db-1
+    depends_on:
+      agent-workspace-db:
+        condition: service_healthy
+  agent-workspace-db:
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: app
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    labels:
+      io.argus.workspace-database: run-scoped-v1
+    entrypoint: ["/bin/sh", "/etc/argus/workspace-db-entrypoint.sh"]
+    volumes:
+      - ./project-environments/workspace_db.pg_hba.conf:/etc/argus/workspace-db.pg_hba.conf:ro
+      - ./project-environments/workspace_db_entrypoint.sh:/etc/argus/workspace-db-entrypoint.sh:ro

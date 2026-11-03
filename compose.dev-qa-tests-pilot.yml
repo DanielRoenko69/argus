@@ -1,0 +1,19 @@
+# Opt-in candidate only; never used by the default bootstrap.
+# Build these images from the matching Core/Dev sources before activation.
+# Append to the COMPLETE existing overlay list (including design, audit, SSO,
+# runtime isolation and persistent experiment/Python volumes). Do not recreate
+# an active Workspace or grant extra container privileges to make QA pass.
+services:
+  mcp-server:
+    image: argus-core-snapshot-limits:20260928
+    environment:
+      ARGUS_DEV_QA_TESTS_ENABLED: "true"
+  argus-dev:
+    image: argus-dev-snapshot-limits:20260928
+    environment:
+      ARGUS_DEV_TECHNICAL_DESIGN_ENABLED: "true"
+      ARGUS_DEV_QA_TESTS_ENABLED: "true"
+  agent-workspace:
+    image: argus-workspace-snapshot-limits:20260928
+    environment:
+      ARGUS_DEV_QA_TESTS_ENABLED: "true"

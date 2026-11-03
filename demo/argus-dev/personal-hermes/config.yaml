@@ -1,0 +1,22 @@
+mcp_servers:
+  argus_dev:
+    url: "${ARGUS_HERMES_DEV_MCP_URL}"
+    headers:
+      Authorization: "Bearer ${ARGUS_HERMES_DEV_MCP_KEY}"
+    enabled: true
+    timeout: 900
+    connect_timeout: 30
+    supports_parallel_tool_calls: false
+    tools:
+      include:
+        - argus_dev_capabilities
+        - argus_dev_preflight
+        - argus_dev_start_workflow
+        - argus_dev_get_run
+        - argus_dev_get_workspace_evidence
+        - argus_dev_get_result
+        - argus_dev_cancel_run
+      prompts: false
+      resources: false
+    sampling:
+      enabled: false

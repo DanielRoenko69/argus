@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "kind": "argus.golden-path-run",
+  "mode": "certification",
+  "status": "waiting_for_approval",
+  "title": "Triage Gitea issue #17 and notify the demo channel",
+  "startedAt": "2026-09-10T10:10:00.000Z",
+  "updatedAt": "2026-09-10T10:10:24.000Z",
+  "completedAt": null,
+  "scope": {
+    "tenantKey": "design-partner-a",
+    "workspaceKey": "default",
+    "environment": "demo"
+  },
+  "workflow": {
+    "id": "golden-path-dev-triage",
+    "revision": "1",
+    "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "saved": true,
+    "agent": {
+      "id": "agent-dev-triage",
+      "revision": "3",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  },
+  "runtime": {
+    "preferred": "hermes",
+    "selected": "hermes",
+    "fallbackAllowed": true,
+    "profileId": "runtime-profile-hermes-demo",
+    "grantSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "policy": {
+    "writeMode": "guarded",
+    "approvalRequired": true,
+    "separationOfDutiesRequired": true,
+    "policySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "writes": ["git_comment", "git_add_label", "slack_post_message"]
+  },
+  "correlation": {
+    "taskId": "golden-task-00017",
+    "externalIssueId": "gitea:argus/golden-path-demo:17",
+    "runId": "workflow-run-240",
+    "traceId": "0af7651916cd43dd8448eb211c80319c",
+    "runtimeTaskId": "hermes-task-240"
+  },
+  "stages": [
+    { "id": "preflight", "label": "Preflight", "state": "succeeded", "startedAt": "2026-09-10T10:10:00.000Z", "completedAt": "2026-09-10T10:10:01.000Z", "detail": "All required providers and controls are ready.", "resourceRefIds": ["task", "workflow"] },
+    { "id": "issue_ingestion", "label": "Issue ingestion", "state": "succeeded", "startedAt": "2026-09-10T10:10:01.000Z", "completedAt": "2026-09-10T10:10:02.000Z", "detail": "Issue #17 was normalized once.", "resourceRefIds": ["issue"] },
+    { "id": "repository_context", "label": "Repository context", "state": "succeeded", "startedAt": "2026-09-10T10:10:02.000Z", "completedAt": "2026-09-10T10:10:06.000Z", "detail": "Immutable repository context was bound to the run.", "resourceRefIds": ["snapshot"] },
+    { "id": "dev_analysis", "label": "Dev analysis", "state": "succeeded", "startedAt": "2026-09-10T10:10:06.000Z", "completedAt": "2026-09-10T10:10:20.000Z", "detail": "Hermes produced structured triage and validation evidence.", "resourceRefIds": ["runtime-task", "trace"] },
+    { "id": "policy_decision", "label": "Policy decision", "state": "succeeded", "startedAt": "2026-09-10T10:10:20.000Z", "completedAt": "2026-09-10T10:10:21.000Z", "detail": "Read steps passed; three external writes require approval.", "resourceRefIds": ["approval"] },
+    { "id": "approval", "label": "Human approval", "state": "action_required", "startedAt": "2026-09-10T10:10:21.000Z", "completedAt": null, "detail": "A separate authorized user must approve the bound payload.", "resourceRefIds": ["approval"] },
+    { "id": "external_action", "label": "External action", "state": "pending", "startedAt": null, "completedAt": null, "detail": "No external write has executed.", "resourceRefIds": [] },
+    { "id": "evidence", "label": "Evidence", "state": "pending", "startedAt": null, "completedAt": null, "detail": "Final report awaits the decision and outcomes.", "resourceRefIds": ["trace"] }
+  ],
+  "approval": {
+    "id": "approval-240",
+    "state": "pending",
+    "planSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "payloadSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "targetSummary": "Comment and label Gitea issue #17, then post the same triage summary to argus-demo.",
+    "requestedAt": "2026-09-10T10:10:21.000Z",
+    "decidedAt": null,
+    "decidedBy": null,
+    "rationale": null,
+    "allowedActions": ["approve", "reject"]
+  },
+  "outcomes": [
+    { "target": "git", "operation": "comment", "state": "pending", "attemptCount": 0, "idempotencyKeySha256": "3333333333333333333333333333333333333333333333333333333333333333", "providerReceiptSha256": null, "verifiedAt": null, "retryable": false, "detail": "Waiting for approval." },
+    { "target": "git", "operation": "add_label", "state": "pending", "attemptCount": 0, "idempotencyKeySha256": "4444444444444444444444444444444444444444444444444444444444444444", "providerReceiptSha256": null, "verifiedAt": null, "retryable": false, "detail": "Waiting for approval." },
+    { "target": "slack", "operation": "post_message", "state": "pending", "attemptCount": 0, "idempotencyKeySha256": "5555555555555555555555555555555555555555555555555555555555555555", "providerReceiptSha256": null, "verifiedAt": null, "retryable": false, "detail": "Waiting for approval." }
+  ],
+  "evidence": {
+    "state": "pending",
+    "offlineVerifiable": false,
+    "gaps": [],
+    "resourceRefIds": ["trace"]
+  },
+  "resourceRefs": [
+    { "refId": "task", "type": "task", "id": "golden-task-00017", "label": "Golden Path task" },
+    { "refId": "issue", "type": "issue", "id": "gitea:argus/golden-path-demo:17", "label": "Gitea issue #17", "href": "http://localhost:3001/argus/golden-path-demo/issues/17" },
+    { "refId": "workflow", "type": "workflow", "id": "golden-path-dev-triage", "label": "Golden Path Dev triage v1", "href": "/build/workflows" },
+    { "refId": "snapshot", "type": "repository_snapshot", "id": "snapshot-golden-17", "label": "Immutable repository snapshot", "href": "/build/knowledge?view=repository-snapshots", "sha256": "6666666666666666666666666666666666666666666666666666666666666666" },
+    { "refId": "runtime-task", "type": "runtime_task", "id": "hermes-task-240", "label": "Hermes analysis task", "href": "/solutions/argus.dev" },
+    { "refId": "approval", "type": "approval", "id": "approval-240", "label": "External write approval", "href": "/runs/approvals/approval-240", "sha256": "2222222222222222222222222222222222222222222222222222222222222222" },
+    { "refId": "trace", "type": "trace", "id": "0af7651916cd43dd8448eb211c80319c", "label": "Distributed trace", "href": "/observe/logs?traceId=0af7651916cd43dd8448eb211c80319c" }
+  ],
+  "allowedActions": ["approve", "reject", "cancel", "open_trace"]
+}

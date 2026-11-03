@@ -1,0 +1,75 @@
+# Append to the full existing Compose configuration, never use as a standalone
+# replacement. Activate only after both stack and workflow certification pass.
+services:
+  mcp-server:
+    image: argus-core-general-stacks:20260928
+    environment:
+      ARGUS_GENERAL_STACKS_ENABLED: "true"
+      ARGUS_WORKSPACE_SESSIONS_ENABLED: "${ARGUS_WORKSPACE_SESSIONS_ENABLED:-false}"
+      ARGUS_CODE_GENERATION_ENABLED: "${ARGUS_CODE_GENERATION_ENABLED:-false}"
+  argus-dev:
+    image: argus-dev-general-stacks:20260928
+    environment:
+      ARGUS_GENERAL_STACKS_ENABLED: "true"
+      ARGUS_WORKSPACE_SESSIONS_ENABLED: "${ARGUS_WORKSPACE_SESSIONS_ENABLED:-false}"
+      ARGUS_CODE_GENERATION_ENABLED: "${ARGUS_CODE_GENERATION_ENABLED:-false}"
+  agent-workspace:
+    image: argus-workspace-general-stacks:20260928
+    environment:
+      ARGUS_GENERAL_STACKS_ENABLED: "true"
+      ARGUS_WORKSPACE_SESSIONS_ENABLED: "${ARGUS_WORKSPACE_SESSIONS_ENABLED:-false}"
+      ARGUS_CODE_GENERATION_ENABLED: "${ARGUS_CODE_GENERATION_ENABLED:-false}"
+    networks: [stack-control]
+    secrets: [stack_runner]
+  stack-runner:
+    image: argus-stack-controller:20260928
+    build:
+      context: ./project-environments
+      dockerfile: Dockerfile.stack
+      target: controller
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1536m
+    cpus: 1
+    pids_limit: 64
+    networks: [stack-control]
+    environment:
+      ARGUS_STACK_BASE_IMAGE: ${ARGUS_STACK_BASE_IMAGE:?Pin the locally built stack base image ID}
+      ARGUS_STACK_EGRESS_CONTAINER: ${COMPOSE_PROJECT_NAME:-argus-core}-stack-egress-1
+      ARGUS_STACK_INSTANCE: ${ARGUS_STACK_INSTANCE:-local}
+      ARGUS_WORKSPACE_SESSIONS_ENABLED: "${ARGUS_WORKSPACE_SESSIONS_ENABLED:-false}"
+    secrets: [stack_runner]
+    # Only the trusted controller receives this socket. Neither model, setup,
+    # project tests nor independent QA can select mounts or reach this network.
+    volumes:
+      - ${ARGUS_STACK_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
+      - stack-receipts:/receipts
+    tmpfs: ["/tmp:size=128m,mode=0700,nosuid,nodev"]
+    depends_on: [stack-egress]
+  stack-egress:
+    image: argus-stack-egress:20260929-vendor-domains
+    build:
+      context: ./project-environments
+      dockerfile: Dockerfile.stack
+      target: egress
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 96m
+    cpus: 0.5
+    pids_limit: 32
+    networks: [stack-public]
+volumes:
+  stack-receipts:
+networks:
+  stack-control:
+    internal: true
+  stack-public:
+secrets:
+  stack_runner:
+    file: ${ARGUS_STACK_RUNNER_SECRET_FILE:-./secrets/project-environments/stack-runner.key}

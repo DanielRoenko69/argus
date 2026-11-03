@@ -1,0 +1,20 @@
+Argus Visual Workflow Builder
+
+This product includes software derived from Sim Studio
+  https://github.com/simstudioai/sim
+  Licensed under the Apache License, Version 2.0
+  Copyright Sim Studio AI contributors
+
+Argus modifications (May 2026):
+- Removed Next.js framework dependencies; ported to Vite + react-router-dom
+- Removed Sim's backend (Bun runtime, Drizzle ORM, BetterAuth, Trigger.dev)
+- Re-wired data layer to Argus backend (PostgreSQL + Express + mcp_* schema)
+- Added Argus-specific node types: SkillNode, AgentNode, ToolNode, MemoryNode,
+  KnowledgeNode (bind to mcp_skills, mcp_agents, mcp_tools, mcp_agent_memory,
+  mcp_rag_indexes respectively)
+- Workflow execution delegated to Argus's existing src/workflows/executor.ts
+- Tailwind theme adjusted to the Argus dark-first design system
+- Removed Sim's multi-tenant Org→Workspace data model in favor of Argus's
+  existing Teams + Bundles RBAC
+
+Per-file copyright headers preserved where ported verbatim from Sim Studio.

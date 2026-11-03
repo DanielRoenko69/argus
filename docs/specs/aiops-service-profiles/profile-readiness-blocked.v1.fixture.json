@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "kind": "aiops-service-profile-readiness",
+  "profileId": 52,
+  "revision": 1,
+  "profileSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "state": "blocked",
+  "generatedAt": "2026-09-08T10:05:00.000Z",
+  "lanes": [
+    {
+      "lane": "logs",
+      "requirement": "required",
+      "state": "ready",
+      "bundleId": 11,
+      "bundleName": "argus-aiops-observe",
+      "providedCategories": ["logs", "runtime"],
+      "toolNames": ["aiops_loki_query_range"],
+      "issueCodes": []
+    },
+    {
+      "lane": "runtime",
+      "requirement": "required",
+      "state": "blocked",
+      "bundleId": 11,
+      "bundleName": "argus-aiops-observe",
+      "providedCategories": ["logs", "runtime"],
+      "toolNames": ["aiops_kubernetes_k8s_get_resources"],
+      "issueCodes": ["kubernetes_certification_stale"]
+    }
+  ],
+  "runtime": {
+    "required": true,
+    "state": "blocked",
+    "scope": {
+      "kind": "kubernetes",
+      "backendId": 17,
+      "targetId": "payments-prod",
+      "cluster": "payments-aks-prod",
+      "namespace": "payments",
+      "workloads": [
+        {
+          "kind": "Deployment",
+          "name": "payment-worker"
+        }
+      ]
+    },
+    "certification": {
+      "status": "passed",
+      "freshness": "stale",
+      "generatedAt": "2026-08-25T08:00:00.000Z",
+      "expiresAt": "2026-09-01T08:00:00.000Z"
+    }
+  },
+  "summary": {
+    "requiredLanes": 2,
+    "readyRequiredLanes": 1,
+    "optionalGaps": 0,
+    "blockingIssues": 1
+  },
+  "issues": [
+    {
+      "code": "kubernetes_certification_stale",
+      "severity": "blocking",
+      "message": "The selected Kubernetes target certification has expired.",
+      "lane": "runtime",
+      "bundleId": 11,
+      "backendId": 17
+    }
+  ],
+  "recoveryActions": [
+    {
+      "id": "renew-target-certification",
+      "label": "Renew certification",
+      "kind": "renew_certification",
+      "href": "/solutions/argus.aiops?target=payments-prod&certification=renew"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+.agent-workspace-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 1.25rem;
+  padding: 0.3rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.agent-workspace-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 36px;
+  padding: 0 0.8rem;
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 650;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.agent-workspace-tabs a:hover,
+.agent-workspace-tabs a:focus-visible {
+  color: var(--text);
+  background: var(--surface-raised);
+}
+
+.agent-workspace-tabs a.is-active {
+  color: var(--violet);
+  background: var(--violet-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
+.build-card-actions .agent-configure-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  color: var(--violet);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.agent-editor-loading {
+  min-height: 220px;
+  padding: 1.5rem;
+}
+
+@media (max-width: 720px) {
+  .agent-workspace-tabs {
+    margin-inline: -0.25rem;
+  }
+}

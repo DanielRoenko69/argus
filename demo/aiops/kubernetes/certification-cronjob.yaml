@@ -1,0 +1,183 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argus-kubernetes-certifier
+  namespace: argus-aiops-system
+  labels:
+    app.kubernetes.io/name: argus-kubernetes-certifier
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: argus-kubernetes-certifier
+  namespace: argus-aiops-system
+rules:
+  - apiGroups: [""]
+    resources: ["services", "serviceaccounts", "pods", "secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/attach"]
+    verbs: ["create", "get"]
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    resourceNames: ["argus-kubernetes-connector"]
+    verbs: ["impersonate"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["get", "list"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argus-kubernetes-certifier
+  namespace: argus-aiops-system
+subjects:
+  - kind: ServiceAccount
+    name: argus-kubernetes-certifier
+    namespace: argus-aiops-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: argus-kubernetes-certifier
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argus-kubernetes-certifier-review
+rules:
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterrolebindings"]
+    verbs: ["get", "list"]
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["selfsubjectaccessreviews"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argus-kubernetes-certifier-review
+subjects:
+  - kind: ServiceAccount
+    name: argus-kubernetes-certifier
+    namespace: argus-aiops-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argus-kubernetes-certifier-review
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: argus-kubernetes-certifier
+  namespace: argus-aiops-system
+  labels:
+    app.kubernetes.io/name: argus-kubernetes-certifier
+spec:
+  schedule: "17 */6 * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 900
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: argus-kubernetes-certifier
+            argus.eu/kubernetes-certifier: "true"
+        spec:
+          serviceAccountName: argus-kubernetes-certifier
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: certifier
+              image: argus-kubernetes-certifier:local
+              imagePullPolicy: IfNotPresent
+              args:
+                - --contract
+                - /etc/argus/connector-contract.json
+                - --report
+                - /tmp/kubernetes-certification.json
+                - --api-key-file
+                - /var/run/secrets/argus-core/api-key
+                - --in-cluster
+              env:
+                - name: ARGUS_CORE_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: argus-kubernetes-certifier
+                      key: core-url
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 96Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              volumeMounts:
+                - name: config
+                  mountPath: /etc/argus
+                  readOnly: true
+                - name: core-api-key
+                  mountPath: /var/run/secrets/argus-core
+                  readOnly: true
+                - name: kube-api-access
+                  mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+                  readOnly: true
+                - name: scratch
+                  mountPath: /tmp
+          volumes:
+            - name: config
+              configMap:
+                name: argus-kubernetes-certifier
+            - name: core-api-key
+              secret:
+                secretName: argus-kubernetes-certifier-core
+                defaultMode: 288
+            - name: kube-api-access
+              projected:
+                defaultMode: 292
+                sources:
+                  - serviceAccountToken:
+                      path: token
+                      expirationSeconds: 3600
+                  - configMap:
+                      name: kube-root-ca.crt
+                      items:
+                        - key: ca.crt
+                          path: ca.crt
+                  - downwardAPI:
+                      items:
+                        - path: namespace
+                          fieldRef:
+                            apiVersion: v1
+                            fieldPath: metadata.namespace
+            - name: scratch
+              emptyDir:
+                sizeLimit: 8Mi

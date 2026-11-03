@@ -1,0 +1,13 @@
+container:
+  # The real demo jobs must resolve the Gitea service name while remaining
+  # isolated from the host. Compose creates this opt-in lab network explicitly.
+  network: argus-core-network
+  privileged: false
+
+runner:
+  capacity: 1
+  timeout: 30m
+
+cache:
+  enabled: true
+  dir: /data/cache

@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Argus AIOps
+    orgId: 1
+    folder: Argus AIOps
+    type: file
+    disableDeletion: true
+    editable: false
+    options:
+      path: /var/lib/grafana/dashboards

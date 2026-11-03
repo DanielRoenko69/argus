@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-api
+  namespace: argus-demo
+spec:
+  template:
+    metadata:
+      annotations:
+        argus.aiops/demo-regression: unready-rollout-v1
+    spec:
+      containers:
+        - name: api
+          command:
+            - /bin/sh
+            - -ec
+            - echo 'simulated checkout-api startup regression' >&2; while true; do sleep 30; done

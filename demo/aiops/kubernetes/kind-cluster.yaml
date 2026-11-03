@@ -1,0 +1,15 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  apiServerAddress: "127.0.0.1"
+  apiServerPort: 56443
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # kagent-tools is exposed through a NodePort. The host binding remains
+      # loopback-only; Argus containers reach it through host.docker.internal.
+      - containerPort: 30084
+        hostPort: 18084
+        listenAddress: "127.0.0.1"
+        protocol: TCP
+  - role: worker

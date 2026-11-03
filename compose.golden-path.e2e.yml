@@ -1,0 +1,29 @@
+services:
+  audit-signing-key-init:
+    image: alpine:3.23
+    user: "0:0"
+    command:
+      - sh
+      - -eu
+      - -c
+      - >-
+        cp /source/argus-audit-signing-key.pem /target/argus-audit-signing-key.pem &&
+        chown 1000:1000 /target/argus-audit-signing-key.pem &&
+        chmod 0600 /target/argus-audit-signing-key.pem
+    volumes:
+      - ./secrets/argus-audit-signing-key.pem:/source/argus-audit-signing-key.pem:ro
+      - golden-path-audit-signing:/target
+
+  argus:
+    environment:
+      ARGUS_AUDIT_SIGNING_KEY_ID: golden-path-e2e-ed25519-v1
+      ARGUS_AUDIT_SIGNING_PRIVATE_KEY_FILE: /run/secrets/audit/argus-audit-signing-key.pem
+      ARGUS_AUDIT_REPORT_WORKER_INTERVAL_SEC: "15"
+    depends_on:
+      audit-signing-key-init:
+        condition: service_completed_successfully
+    volumes:
+      - golden-path-audit-signing:/run/secrets/audit:ro
+
+volumes:
+  golden-path-audit-signing:

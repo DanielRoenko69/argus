@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 2,
+  "kind": "ai-compliance-dossier-manifest",
+  "dossierId": "20000000-0000-4000-8000-000000000011",
+  "dossierSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "generatedAt": "2026-09-10T10:00:00.000Z",
+  "generatedBy": { "actorType": "user", "actorId": "alex", "displayName": "Alex" },
+  "assessmentStatus": "ready_for_independent_review",
+  "aiSystem": {
+    "aiSystemId": "10000000-0000-4000-8000-000000000001",
+    "revisionId": "10000000-0000-4000-8000-000000000002",
+    "revision": 3,
+    "revisionSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "displayName": "Argus Dev governed coding assistant",
+    "classification": "minimal_or_no_risk"
+  },
+  "scope": {
+    "workspaceId": "default", "tenantId": "design-partner-a", "environments": ["production"],
+    "from": "2026-08-10T00:00:00.000Z", "to": "2026-09-10T09:59:59.999Z"
+  },
+  "sourceEvidencePack": {
+    "evidencePackId": "20000000-0000-4000-8000-000000000002",
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "checkpointId": "20000000-0000-4000-8000-000000000003",
+    "verification": "verified"
+  },
+  "controlCoverage": { "applicable": 1, "satisfied": 1, "open": 0, "exceptions": 0, "expired": 0 },
+  "sections": [{
+    "sectionId": "obligations-annex_iv", "title": "Annex IV technical documentation", "state": "not_applicable",
+    "evidenceCount": 0, "gapCount": 0, "evidence": []
+  }],
+  "artifacts": [
+    { "format": "json", "filename": "argus-ai-compliance-dossier-v2.json", "mediaType": "application/json", "bytes": 4096, "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" },
+    { "format": "pdf", "filename": "argus-ai-compliance-dossier-v2.pdf", "mediaType": "application/pdf", "bytes": 8192, "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" }
+  ],
+  "externalAnchors": [],
+  "complianceMatrix": {
+    "schemaVersion": 2,
+    "kind": "argus.ai-compliance-obligation-matrix",
+    "matrixSha256": "67465a2565bba8b55e1497d29cb496a493f67412fd00af7daaf2b3d6c14b5740",
+    "legalBaseline": {
+      "regulation": "Regulation (EU) 2024/1689",
+      "officialJournalUrl": "https://eur-lex.europa.eu/eli/reg/2024/1689/oj",
+      "annexIvUrl": "https://ai-act-service-desk.ec.europa.eu/en/ai-act/annex-4",
+      "qualityManagementUrl": "https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-17",
+      "assessedAt": "2026-09-10T10:00:00.000Z",
+      "legalReviewRequired": true,
+      "applicabilityRationale": "The released revision is classified as minimal_or_no_risk; high-risk-only requirements are recorded as not applicable, while always and conditionally applicable obligations remain assessed."
+    },
+    "coverage": { "applicable": 1, "satisfied": 1, "partial": 0, "missing": 0, "expired": 0, "notApplicable": 3 },
+    "groups": [
+      {
+        "groupId": "annex_iv", "title": "Annex IV technical documentation", "legalRefs": ["Article 11", "Annex IV"],
+        "coverage": { "applicable": 0, "satisfied": 0, "partial": 0, "missing": 0, "expired": 0, "notApplicable": 1 },
+        "requirements": [{
+          "requirementId": "AIA-ANNEX-IV-1", "legalRefs": ["Annex IV(1)"], "title": "General system description and instructions",
+          "description": "Identity, intended purpose, version, interfaces and instructions for use.", "applicability": "high_risk", "state": "not_applicable", "ownerRole": "provider",
+          "expectedEvidence": ["System description"], "controlIds": [], "evidence": [], "findings": [],
+          "assessedAt": "2026-09-10T10:00:00.000Z", "nextReviewAt": null
+        }]
+      },
+      {
+        "groupId": "quality_management", "title": "Provider quality-management system", "legalRefs": ["Article 17"],
+        "coverage": { "applicable": 0, "satisfied": 0, "partial": 0, "missing": 0, "expired": 0, "notApplicable": 1 },
+        "requirements": [{
+          "requirementId": "AIA-QMS-17-A", "legalRefs": ["Article 17(1)(a)"], "title": "Regulatory compliance and change-management strategy",
+          "description": "Written conformity and change-management strategy.", "applicability": "high_risk", "state": "not_applicable", "ownerRole": "provider",
+          "expectedEvidence": ["Compliance policy"], "controlIds": [], "evidence": [], "findings": [],
+          "assessedAt": "2026-09-10T10:00:00.000Z", "nextReviewAt": null
+        }]
+      },
+      {
+        "groupId": "lifecycle", "title": "Lifecycle, deployer and transparency obligations", "legalRefs": ["Articles 5, 9-15, 19-21, 26-27, 50, 72-73"],
+        "coverage": { "applicable": 1, "satisfied": 1, "partial": 0, "missing": 0, "expired": 0, "notApplicable": 0 },
+        "requirements": [{
+          "requirementId": "AIA-LIFECYCLE-ART5", "legalRefs": ["Article 5"], "title": "Prohibited-practice screening",
+          "description": "The intended and foreseeable use is screened and prohibited systems fail closed.", "applicability": "always", "state": "satisfied", "ownerRole": "provider",
+          "expectedEvidence": ["Classification assessment"], "controlIds": ["AIA-ART5-PROHIBITED-PRACTICES"],
+          "evidence": [{ "evidenceType": "document", "evidenceId": "10000000-0000-4000-8000-000000000002", "sha256": "2222222222222222222222222222222222222222222222222222222222222222" }],
+          "findings": [], "assessedAt": "2026-09-10T10:00:00.000Z", "nextReviewAt": "2027-09-10T10:00:00.000Z"
+        }]
+      },
+      {
+        "groupId": "conformity_assessment", "title": "Conformity assessment, declaration and registration", "legalRefs": ["Articles 43, 47-49"],
+        "coverage": { "applicable": 0, "satisfied": 0, "partial": 0, "missing": 0, "expired": 0, "notApplicable": 1 },
+        "requirements": [{
+          "requirementId": "AIA-CONFORMITY-ART43", "legalRefs": ["Article 43"], "title": "Conformity-assessment procedure",
+          "description": "The applicable conformity route is documented.", "applicability": "high_risk", "state": "not_applicable", "ownerRole": "external_assessor",
+          "expectedEvidence": ["Conformity route decision"], "controlIds": [], "evidence": [], "findings": [],
+          "assessedAt": "2026-09-10T10:00:00.000Z", "nextReviewAt": null
+        }]
+      }
+    ]
+  },
+  "declaredGaps": [],
+  "claimBoundary": "This V2 dossier packages verified evidence and explicit obligation gaps for independent review. It is not an automatic EU AI Act conformity declaration."
+}

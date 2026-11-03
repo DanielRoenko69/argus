@@ -1,0 +1,255 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: argus_e2e
+      POSTGRES_USER: argus_e2e
+      POSTGRES_PASSWORD: argus_e2e_password
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./e2e/fixtures/e2e-git-seed.sql:/docker-entrypoint-initdb.d/02-e2e-git-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U argus_e2e -d argus_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # Optional external Knowledge provider contract. The Argus adapter talks to
+  # the standard Qdrant REST API; storage is disposable for this E2E world.
+  qdrant:
+    image: qdrant/qdrant:v1.14.1@sha256:419d72603f5346ee22ffc4606bdb7beb52fcb63077766fab678e6622ba247366
+    ports:
+      - "127.0.0.1:${ARGUS_QDRANT_PORT:-16333}:6333"
+    tmpfs:
+      - /qdrant/storage
+    healthcheck:
+      # The pinned Qdrant image intentionally ships without curl/wget. Use its
+      # bundled Perl runtime for a real HTTP readiness probe instead of a
+      # binary that is absent from the image.
+      test:
+        - CMD-SHELL
+        - >-
+          perl -MIO::Socket::INET -e '$$s=IO::Socket::INET->new(PeerAddr=>"127.0.0.1",PeerPort=>6333,Proto=>"tcp",Timeout=>2) or exit 1; print $$s "GET /readyz HTTP/1.0\r\nHost: localhost\r\n\r\n"; $$line=<$$s>; exit($$line =~ / 200 / ? 0 : 1)'
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: argus-e2e-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: argus-e2e-admin-password
+      KC_HOSTNAME: http://keycloak:8080
+      KC_HEALTH_ENABLED: "true"
+      JAVA_OPTS_KC_HEAP: "-XX:InitialRAMPercentage=20 -XX:MaxRAMPercentage=50"
+    mem_limit: 768m
+    volumes:
+      - ./e2e/keycloak/argus-e2e-realm.json:/opt/keycloak/data/import/argus-e2e-realm.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9000; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; grep -q \"200 OK\" <&3'"]
+      interval: 3s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+
+  fake-openai:
+    image: node:20-alpine
+    working_dir: /fixtures
+    command: ["node", "fake-openai.mjs"]
+    volumes:
+      - ./e2e/fixtures:/fixtures:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  fake-mcp:
+    image: node:20-alpine
+    working_dir: /fixtures
+    command: ["node", "fake-mcp.mjs"]
+    volumes:
+      - ./e2e/fixtures:/fixtures:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4100/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  fake-workspace:
+    image: node:20-alpine
+    working_dir: /fixtures
+    command: ["node", "fake-workspace.mjs"]
+    volumes:
+      - ./e2e/fixtures:/fixtures:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4200/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  argus:
+    build: .
+    ports:
+      - "${ARGUS_E2E_PORT:-3100}:3000"
+    environment:
+      PORT: "3000"
+      NODE_ENV: test
+      LOG_LEVEL: info
+      MCP_API_KEYS: argus-e2e-service-key
+      SESSION_SECRET: argus-e2e-session-secret-at-least-32-characters
+      DB_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      POSTGRES_ENABLED: "true"
+      POSTGRES_CONNECTION_URL: postgresql://argus_e2e:argus_e2e_password@postgres:5432/argus_e2e
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379
+      LOCAL_AUTH_ENABLED: "true"
+      OIDC_SSO_ENABLED: "true"
+      OIDC_PROVIDER_NAME: Keycloak
+      OIDC_AUTHORIZATION_URL: http://keycloak:8080/realms/argus-e2e/protocol/openid-connect/auth
+      OIDC_TOKEN_URL: http://keycloak:8080/realms/argus-e2e/protocol/openid-connect/token
+      OIDC_ISSUER: http://keycloak:8080/realms/argus-e2e
+      OIDC_JWKS_URI: http://keycloak:8080/realms/argus-e2e/protocol/openid-connect/certs
+      OIDC_CLIENT_ID: argus-e2e
+      OIDC_CLIENT_SECRET: argus-e2e-oidc-secret
+      OIDC_REDIRECT_URI: http://argus:3000/auth/oidc/callback
+      OIDC_DEFAULT_ROLE: viewer
+      OIDC_GROUP_MAP: argus-platform-admins:platform_admin,argus-operations-admins:operations_admin,argus-developers:developer,argus-agent-operators:agent_operator,argus-chat-users:chat_user
+      CHAT_SPA_ENABLED: "true"
+      ARGUS_INSTALL_STARTER_AGENTS: "false"
+      OPENAI_COMPAT_BASE_URL: http://fake-openai:4000/v1
+      OPENAI_COMPAT_API_KEY: ""
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_API_KEY: ""
+      ALLOW_EMPTY_OPENAI_COMPAT_API_KEY: "true"
+      LLM_PROVIDER_OVERRIDES: '{"e2e-chat":"openai-compatible","e2e-embedding":"openai-compatible"}'
+      EMBEDDING_MODEL: e2e-embedding
+      MEMORY_CONSOLIDATION_MODEL: e2e-chat
+      LLM_REQUEST_TIMEOUT_MS: "10000"
+      SSRF_ALLOWLIST_HOSTS: fake-mcp
+      RAG_RERANKER_PROVIDER: none
+      AI_TRANSPARENCY_NOTICE_ENABLED: "true"
+      ARGUS_AUDIT_EVIDENCE_V1_ENABLED: "true"
+      PUBLIC_WIDGET_ENABLED: "true"
+      MAX_AGENT_SESSION_SECONDS: "60"
+      CANARIES_ENABLED: "0"
+      CANARIES_API_KEY: argus-e2e-service-key
+      CANARIES_RETENTION_DAYS: "30"
+      K8S_ENABLED: "false"
+      GRAFANA_ENABLED: "false"
+      OPENSEARCH_ENABLED: "false"
+      LANGFUSE_PUBLIC_KEY: ""
+      LANGFUSE_SECRET_KEY: ""
+      WORKSPACE_SECRET: argus-e2e-workspace-secret
+      AGENT_WORKSPACE_URL: http://fake-workspace:4200
+      LANGGRAPH_URL: http://langgraph:2025
+      ARGUS_SOLUTION_PACK_ENDPOINTS: argus.dev=http://langgraph:2025
+      ARGUS_SOLUTION_PACK_TOKEN_FILES: argus.dev=/run/secrets/argus-dev-token
+      ARGUS_SOLUTION_PACK_REFRESH_SEC: "10"
+      ARGUS_GOLDEN_PATH_WORKSPACE_KEY: argus-e2e
+      ARGUS_GOLDEN_PATH_TENANT_KEY: argus-e2e
+      ARGUS_GOLDEN_PATH_ENVIRONMENT: certification
+      ARGUS_GOLDEN_PATH_WORKFLOW_NAME: e2e_golden_path_workflow
+      ARGUS_GOLDEN_PATH_AGENT_NAME: e2e-operator
+      ARGUS_GOLDEN_PATH_PREFERRED_RUNTIME: native
+      ARGUS_GOLDEN_PATH_RUNTIME_FALLBACK: "false"
+      ARGUS_GOLDEN_PATH_GIT_BUNDLE: argus_e2e_gitea
+      ARGUS_GOLDEN_PATH_GIT_REPOSITORY: argus/argus-e2e-repo
+      ARGUS_GOLDEN_PATH_ISSUE_NUMBER: "17"
+      ARGUS_GOLDEN_PATH_GIT_ORIGIN: http://fake-workspace:4200
+      ARGUS_GOLDEN_PATH_NOTIFICATION_BUNDLE: argus_e2e_slack_fixture
+      ARGUS_GOLDEN_PATH_NOTIFICATION_DESTINATION: argus-e2e-golden-path
+      ARGUS_EXECUTION_GRANT_SECRET: argus-e2e-execution-grant-signing-secret-at-least-32-characters
+      GITEA_CI_WEBHOOK_SECRET: argus-e2e-ci-webhook-secret
+      GITHUB_CI_WEBHOOK_SECRET: argus-e2e-github-ci-webhook-secret
+      GITLAB_CI_WEBHOOK_SECRET: argus-e2e-gitlab-ci-webhook-secret
+      JENKINS_CI_WEBHOOK_SECRET: argus-e2e-jenkins-ci-webhook-secret
+    volumes:
+      - ./e2e/fixtures/argus-dev-token.txt:/run/secrets/argus-dev-token:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      fake-openai:
+        condition: service_healthy
+      fake-mcp:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  langgraph:
+    build:
+      context: ./packs/argus-dev
+      dockerfile: Dockerfile
+    environment:
+      ARGUS_URL: http://argus:3000
+      ARGUS_API_KEY: argus-e2e-service-key
+      POSTGRES_CONNECTION_URL: postgresql://argus_e2e:argus_e2e_password@postgres:5432/argus_e2e
+      AGENT_WORKSPACE_URL: http://fake-workspace:4200
+      WORKSPACE_SECRET: argus-e2e-workspace-secret
+      ARGUS_PACK_DISCOVERY_TOKEN_FILE: /run/secrets/argus-dev-token
+      ARGUS_A2A_PUBLIC_URL: http://langgraph:2025
+      MAX_REVIEW_RETRIES: "1"
+      LANGFUSE_PUBLIC_KEY: ""
+      LANGFUSE_SECRET_KEY: ""
+    volumes:
+      - ./e2e/fixtures/argus-dev-token.txt:/run/secrets/argus-dev-token:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      argus:
+        condition: service_healthy
+      fake-workspace:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2025/ok"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.55.0-noble
+    working_dir: /work/e2e
+    init: true
+    environment:
+      ARGUS_E2E_BASE_URL: http://argus:3000
+      ARGUS_E2E_RECOVERY_PHASE: prepare
+      CI: "true"
+    volumes:
+      - ./e2e:/work/e2e
+    # The focused Golden Path certification owns a separate, freshly signed
+    # Compose lifecycle (compose.golden-path.e2e.yml). Keep it out of this
+    # shared product/restart journey so both gates retain a real first-install
+    # boundary and cannot consume each other's first-admin bootstrap.
+    command: ["sh", "-c", "npm ci --no-audit --no-fund && npx playwright test tests/golden-path.spec.ts tests/restart-recovery.spec.ts"]
+    depends_on:
+      argus:
+        condition: service_healthy
+      langgraph:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy

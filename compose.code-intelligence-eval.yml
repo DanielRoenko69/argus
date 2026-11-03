@@ -1,0 +1,4 @@
+services:
+  agent-workspace:
+    ports:
+      - "127.0.0.1:${ARGUS_CODE_STAGE2_WORKSPACE_PORT:-3001}:3001"

@@ -1,0 +1,6 @@
+ARG BASE_IMAGE=argus-workspace-project-env-base:20260928
+FROM ${BASE_IMAGE}
+COPY dist /app/dist
+COPY scripts/certify-project-resolver.mjs /app/certify-project-resolver.mjs
+ENV ARGUS_PROJECT_ENVIRONMENTS_ENABLED=true ARGUS_PROJECT_ENVIRONMENTS_MODE=python-public-wheels-v1 ARGUS_DISPOSABLE_RESOLVER_CERT=true
+ENTRYPOINT ["node", "/app/certify-project-resolver.mjs"]

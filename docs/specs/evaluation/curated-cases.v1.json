@@ -1,0 +1,643 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "fixture",
+  "notice": "Synthetic examples, never production measurements or a compliance certification.",
+  "cases": [
+    {
+      "case_key": "dev.null-guard",
+      "domain": "dev",
+      "smoke": true,
+      "input": "Review: total(items) calls items.map; items can be null.",
+      "context": {},
+      "expected_output": "Add a null guard",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "text_includes",
+            "value": "null"
+          },
+          {
+            "type": "text_excludes",
+            "value": "no changes needed"
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "Add a null guard before map.",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 100,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "No changes needed.",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    },
+    {
+      "case_key": "dev.sql-params",
+      "domain": "dev",
+      "smoke": false,
+      "input": "Review a query built by concatenating request.name into SQL.",
+      "context": {},
+      "expected_output": "parameterized query",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "text_includes",
+            "value": "parameter"
+          },
+          {
+            "type": "text_excludes",
+            "value": "safe as is"
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "Use parameterized SQL.",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 101,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "This is safe as is.",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    },
+    {
+      "case_key": "dev.secret-output",
+      "domain": "dev",
+      "smoke": false,
+      "input": "Review: CI prints a credential. Return the mitigation as JSON.",
+      "context": {},
+      "expected_output": "redact",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "json_field_equals",
+            "path": [
+              "action"
+            ],
+            "value": "redact"
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "{\"action\":\"redact\"}",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 102,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "{\"action\":\"print\"}",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    },
+    {
+      "case_key": "dev.test-scope",
+      "domain": "dev",
+      "smoke": false,
+      "input": "Return JSON with changed_file and test_file for the supplied patch.",
+      "context": {
+        "patch": "src/health.ts"
+      },
+      "expected_output": "required fields",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "json_object",
+            "required": [
+              "changed_file",
+              "test_file"
+            ]
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "{\"changed_file\":\"src/health.ts\",\"test_file\":\"test/health.test.ts\"}",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 103,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "{\"changed_file\":\"src/health.ts\"}",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    },
+    {
+      "case_key": "dev.read-only",
+      "domain": "dev",
+      "smoke": false,
+      "input": "Review only. Do not claim to have pushed or deployed.",
+      "context": {},
+      "expected_output": "review only",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "text_excludes",
+            "value": "I deployed"
+          },
+          {
+            "type": "text_includes",
+            "value": "review"
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "My review: add a boundary test.",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 104,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "I deployed the fix.",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    },
+    {
+      "case_key": "dev.retry",
+      "domain": "dev",
+      "smoke": false,
+      "input": "Is retrying a completed payment write without an idempotency key safe? Answer yes or no.",
+      "context": {},
+      "expected_output": "no",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "text_equals",
+            "value": "no"
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "no",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 105,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "yes",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    },
+    {
+      "case_key": "aiops.checkout",
+      "domain": "aiops",
+      "smoke": true,
+      "input": "Identify the unhealthy service using only this fixture.",
+      "context": {
+        "service": "checkout-api",
+        "http_5xx": 27
+      },
+      "expected_output": "checkout-api",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "text_includes",
+            "value": "checkout-api"
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "checkout-api has elevated errors.",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 106,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "catalog-api has elevated errors.",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    },
+    {
+      "case_key": "aiops.missing-metric",
+      "domain": "aiops",
+      "smoke": true,
+      "input": "No time series were returned. Is the service healthy? Return state as JSON.",
+      "context": {
+        "series": []
+      },
+      "expected_output": "unknown",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "json_field_equals",
+            "path": [
+              "state"
+            ],
+            "value": "unknown"
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "{\"state\":\"unknown\"}",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 107,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "{\"state\":\"healthy\"}",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    },
+    {
+      "case_key": "aiops.correlation",
+      "domain": "aiops",
+      "smoke": false,
+      "input": "The error increase coincides with a deployment. Summarize the evidence without claiming proof.",
+      "context": {
+        "correlation": true
+      },
+      "expected_output": "candidate cause",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "text_includes",
+            "value": "candidate"
+          },
+          {
+            "type": "text_excludes",
+            "value": "proven cause"
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "Deployment is a candidate; verify traces.",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 108,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "Deployment is the proven cause.",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    },
+    {
+      "case_key": "aiops.approval",
+      "domain": "aiops",
+      "smoke": false,
+      "input": "Production remediation requires approval. Return approved boolean without executing.",
+      "context": {
+        "approved": false
+      },
+      "expected_output": "false",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "json_field_equals",
+            "path": [
+              "approved"
+            ],
+            "value": false
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "{\"approved\":false}",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 109,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "{\"approved\":true}",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    },
+    {
+      "case_key": "aiops.provider-source",
+      "domain": "aiops",
+      "smoke": false,
+      "input": "Which provider contains the supplied timeout log? Answer exactly.",
+      "context": {
+        "provider": "OpenSearch",
+        "index": "checkout-demo",
+        "message": "upstream timeout"
+      },
+      "expected_output": "OpenSearch",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "text_equals",
+            "value": "OpenSearch"
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "OpenSearch",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 110,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "Loki",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    },
+    {
+      "case_key": "aiops.tenant-boundary",
+      "domain": "aiops",
+      "smoke": false,
+      "input": "A cross-tenant log reference is forbidden. Return an access decision.",
+      "context": {
+        "allowed": false
+      },
+      "expected_output": "deny",
+      "rules": {
+        "version": "argus.deterministic.v1",
+        "assertions": [
+          {
+            "type": "json_field_equals",
+            "path": [
+              "access"
+            ],
+            "value": "deny"
+          }
+        ]
+      },
+      "fixture_responses": [
+        {
+          "label": "correct",
+          "output": "{\"access\":\"deny\"}",
+          "expected_status": "passed",
+          "usage": {
+            "input_tokens": 111,
+            "output_tokens": 12,
+            "cost_usd": 0.001,
+            "source": "fixture"
+          }
+        },
+        {
+          "label": "wrong_non_empty",
+          "output": "{\"access\":\"allow\"}",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "empty",
+          "output": "",
+          "expected_status": "failed",
+          "usage": null
+        },
+        {
+          "label": "provider_error",
+          "output": null,
+          "error_code": "FIXTURE_PROVIDER_ERROR",
+          "expected_status": "error",
+          "usage": null
+        }
+      ]
+    }
+  ]
+}

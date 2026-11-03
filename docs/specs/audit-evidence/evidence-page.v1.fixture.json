@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-08T00:00:00.000Z",
+  "verification": {
+    "state": "event_hashes_and_checkpoint_valid",
+    "chainContinuity": "not_evaluated_for_filtered_page",
+    "checkpointId": "f6401849-e6bd-44b8-a2fa-c2d85bbd16ce",
+    "checkedAt": "2026-09-08T00:00:00.000Z"
+  },
+  "coverage": {
+    "canonicalProducerFamilies": ["tags", "access.user_lifecycle", "access.api_key_lifecycle", "access.policy_management", "access.sso_identity", "approval.runtime", "approval.workflow", "risk_policy.external_filter"],
+    "legacyGaps": [
+      {
+        "code": "legacy_sources_not_canonical",
+        "description": "Only migrated producer families are canonical; older and unmigrated audit sources are not represented as complete history."
+      },
+    ]
+  },
+  "items": [
+    {
+      "id": "6d826b73-3280-4fdc-a387-6c8ceee493ad",
+      "occurredAt": "2026-09-07T12:01:04.000Z",
+      "receivedAt": "2026-09-07T12:01:04.120Z",
+      "environment": "production-eu",
+      "workspaceKey": "default",
+      "tenantKey": "default",
+      "solution": "argus.core",
+      "producer": { "name": "tags.assignments.replace", "eventId": "tag-replace-391" },
+      "actor": {
+        "type": "human",
+        "id": "17",
+        "ssoSubject": "oidc|acme|alex",
+        "authMethod": "oidc",
+        "effectiveRoles": ["developer"]
+      },
+      "action": "tag.assignments_replaced",
+      "outcome": "success",
+      "risk": "medium",
+      "policy": { "id": null, "version": null, "decision": null },
+      "approval": { "id": null, "href": null },
+      "resource": {
+        "type": "workflow",
+        "id": "161",
+        "label": "161",
+        "labelSource": "resource_id",
+        "href": "/build/workflows/studio/161",
+        "version": null,
+        "tags": [{ "id": "3", "label": "Platform", "color": "#7c3aed" }],
+        "tagSource": "event_payload"
+      },
+      "correlation": {
+        "rootRunId": null,
+        "traceId": null,
+        "spanId": null,
+        "requestId": "request-tag-replace-391",
+        "rootRunHref": null,
+        "logsHref": null
+      },
+      "digests": {
+        "payload": "63e7f6adeb7f237f9f606fdd3315079099f81b6f51a7fdca8a80ad967b940bb7",
+        "before": "9d1771e17a112fbc8b2f212ce848797a31f894280bd4080853ec02c98a072f90",
+        "after": "c44a6f0d56aa3216cab01ed74f12dca71983d4bc49f0b8bf998883087ad0f2a2",
+        "redactionProfile": "argus.audit.redaction.v1"
+      },
+      "integrity": {
+        "sequence": 842,
+        "previousHash": "6285f63bf31a0e8782a1a0c37c3d9f735343448b3d682d2142f7120466ab75bd",
+        "hash": "d05da006cbe7dc9b48e76ee2e610c7f51b61e17eaf3bf639fedbc4b85756c194",
+        "hashState": "event_hash_valid",
+        "signingKeyId": null,
+        "checkpointId": "f6401849-e6bd-44b8-a2fa-c2d85bbd16ce"
+      },
+      "retention": { "class": "business-audit-standard", "until": "2033-09-06T12:01:04.000Z", "legalHold": false },
+      "summary": "tag.assignments_replaced → success · workflow 161"
+    }
+  ],
+  "nextCursor": null,
+  "export": { "allowed": true, "state": "available", "formats": ["json", "jsonl", "csv"], "requiresStepUp": false }
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "examples": [
+    {
+      "name": "unauthorized_or_missing_snapshot",
+      "status": 404,
+      "response": { "error": "repository snapshot not found" }
+    },
+    {
+      "name": "missing_entry_point",
+      "status": 400,
+      "response": { "error": "provide exactly one of seed or q" }
+    },
+    {
+      "name": "unknown_edge_type",
+      "status": 400,
+      "response": { "error": "unknown edge type: owns" }
+    },
+    {
+      "name": "snapshot_not_ready",
+      "status": 409,
+      "response": { "error": "repository snapshot graph is not available" }
+    },
+    {
+      "name": "empty_search",
+      "status": 200,
+      "response": {
+        "nodes": [],
+        "edges": [],
+        "truncated": false,
+        "truncationReasons": [],
+        "nextCursor": null
+      }
+    }
+  ]
+}

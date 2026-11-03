@@ -1,0 +1,33 @@
+{
+  "schema": "argus.code-retrieval-evaluation.v1",
+  "repositoryKey": "argus/pino-code-intelligence-benchmark",
+  "cases": [
+    {
+      "id": "upstream-ticket",
+      "query": "When a Pino source using a custom level formatter relays a string level label through the metadata protocol, multistream silently drops the record. Preserve numeric-level behavior and ensure an error record identified by the string label reaches every eligible destination. Add a focused regression test.",
+      "expectedFiles": [
+        "lib/multistream.js",
+        "test/multistream.test.js"
+      ],
+      "limit": 5
+    },
+    {
+      "id": "symptom-paraphrase",
+      "query": "Custom formatters emit text level labels, but records disappear when a logger routes them through multiple streams. Find the routing implementation and its tests.",
+      "expectedFiles": [
+        "lib/multistream.js",
+        "test/multistream.test.js"
+      ],
+      "limit": 5
+    },
+    {
+      "id": "protocol-paraphrase",
+      "query": "The metadata protocol can forward lastLevel as the string error. Destination threshold comparisons should still deliver the record to debug and error streams.",
+      "expectedFiles": [
+        "lib/multistream.js",
+        "test/multistream.test.js"
+      ],
+      "limit": 5
+    }
+  ]
+}

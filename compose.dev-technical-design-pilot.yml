@@ -1,0 +1,19 @@
+# Explicit local acceptance candidate, not a default bootstrap feature.
+# Append to ALL overlays already used by the stack (especially SSO and audit).
+# Build all three named images before recreating only these services with
+# --no-deps. Preserve Python lib/bin in workspace-python-data BEFORE replacing
+# a pre-volume Workspace. Existing checkpoint policies are never migrated.
+services:
+  mcp-server:
+    image: argus-core-qa-binding:20260928
+    environment:
+      ARGUS_TECHNICAL_EXPERIMENTS_ENABLED: "true"
+  argus-dev:
+    image: argus-dev-qa-binding:20260928
+    environment:
+      ARGUS_DEV_TECHNICAL_DESIGN_ENABLED: "true"
+      ARGUS_TECHNICAL_EXPERIMENTS_ENABLED: "true"
+  agent-workspace:
+    image: argus-workspace-planner-repair:20260928
+    environment:
+      ARGUS_TECHNICAL_EXPERIMENTS_ENABLED: "true"

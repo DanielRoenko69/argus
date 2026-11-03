@@ -1,0 +1,9 @@
+**
+!dist/
+!dist/**
+!agent-workspace/
+!agent-workspace/dist/
+!agent-workspace/dist/**
+!argus-console/
+!argus-console/dist/
+!argus-console/dist/**

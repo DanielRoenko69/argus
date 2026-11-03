@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "argus.hermes.upstream/v1alpha1",
+  "upstream": {
+    "repository": "NousResearch/hermes-agent",
+    "containerImage": "nousresearch/hermes-agent"
+  },
+  "channels": {
+    "stable": {
+      "releaseRef": "v2026.7.7.2",
+      "managedImageDigest": "sha256:9c841866021c54c4596849f6135717e8a4d52ba510b7f52c50aef1de1a283973",
+      "managedRuntimeEligible": true,
+      "notes": "Managed V1 passed contract, live read-only runtime-MCP, cancel/crash/deadline resilience, zero-orphan, attached-only rollback and candidate-restore certification on 2026-09-01."
+    },
+    "candidate": {
+      "releaseRef": "v2026.7.7.2",
+      "managedImageDigest": "sha256:9c841866021c54c4596849f6135717e8a4d52ba510b7f52c50aef1de1a283973",
+      "managedRuntimeEligible": true,
+      "notes": "The candidate passed the Managed V1 contract matrix, live read-only runtime-MCP and resilience suite. It was promoted to stable after attached-only rollback and candidate-restore certification on 2026-09-01."
+    }
+  },
+  "rollbackCertification": {
+    "stableReleaseRef": "v2026.7.7.2",
+    "strategy": "attached-only",
+    "certifiedAt": "2026-09-01",
+    "fallbackAttachedState": "ready",
+    "fallbackManagedState": "unavailable",
+    "restoredCandidateRun": "completed",
+    "orphanContainers": 0,
+    "orphanNetworks": 0,
+    "notes": "No earlier Hermes image is Managed-runtime compatible: v0.18.1 completed without advertising or calling MCP tools and v0.18.0 failed. The first stable Managed release therefore rolls back by disabling Managed provisioning while retaining the externally attested Attached service."
+  },
+  "requiredApi": {
+    "paths": [
+      "/health/detailed",
+      "/v1/capabilities",
+      "/v1/runs",
+      "/v1/runs/:id",
+      "/v1/runs/:id/events",
+      "/v1/runs/:id/stop",
+      "/v1/runs/:id/approval"
+    ],
+    "requiredForManagedRuntime": [
+      "runs",
+      "events-sse",
+      "cancel",
+      "approval",
+      "mcp-fabric"
+    ]
+  },
+  "attachedCapabilityHandshake": {
+    "releaseRef": "v2026.7.7.2",
+    "health": {
+      "platform": "hermes-agent",
+      "version": "0.18.2"
+    },
+    "capabilities": {
+      "object": "hermes.api_server.capabilities",
+      "platform": "hermes-agent",
+      "runtime": {
+        "mode": "server_agent",
+        "tool_execution": "server",
+        "split_runtime": false
+      }
+    },
+    "governance": "external_attested",
+    "runtimeMcpLease": "unsupported"
+  }
+}

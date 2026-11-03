@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kagent-tools-ingress
+  namespace: argus-aiops-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: argus-kubernetes-tools
+      app.kubernetes.io/name: argus-kubernetes-tools
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8084

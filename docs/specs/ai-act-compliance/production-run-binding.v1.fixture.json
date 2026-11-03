@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "kind": "ai-system-production-run-binding",
+  "rootRunId": "run-20260909-00042",
+  "environment": "production",
+  "production": true,
+  "executionAuthorized": true,
+  "boundAt": "2026-09-09T09:00:00.000Z",
+  "aiSystemId": "10000000-0000-4000-8000-000000000001",
+  "aiSystemRevisionId": "10000000-0000-4000-8000-000000000002",
+  "classificationAssessmentId": "10000000-0000-4000-8000-000000000003",
+  "controlCatalog": {
+    "catalogId": "eu-ai-act-2024-1689-core",
+    "catalogVersion": 1,
+    "catalogSha256": "7bf91d1981646aaba6da1076ffe5c1b8964cee548c024e623f27009387294ecf"
+  },
+  "controlSetSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+  "intendedPurposeSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+  "componentBindings": [
+    {
+      "resourceType": "agent",
+      "resourceId": "developer-agent",
+      "revision": "12",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    {
+      "resourceType": "workflow",
+      "resourceId": "argus-dev-coding",
+      "revision": "8",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+    },
+    {
+      "resourceType": "model",
+      "resourceId": "openai-codex-runtime",
+      "revision": "gpt-5.3-codex-spark",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+    }
+  ],
+  "effectiveIdentity": {
+    "actorType": "human",
+    "subjectId": "oidc:design-partner-a:developer-17",
+    "role": "developer",
+    "authenticationMethod": "sso",
+    "identityVerified": true,
+    "mfaStepUpAt": "2026-09-09T08:58:00.000Z"
+  },
+  "releaseGate": {
+    "status": "passed",
+    "checkedAt": "2026-09-09T08:59:59.000Z",
+    "blockingReasons": [],
+    "evidence": [
+      {
+        "evidenceType": "evaluation",
+        "evidenceId": "release-eval-20260909-12",
+        "sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+        "href": "/build/evaluations/release-eval-20260909-12"
+      },
+      {
+        "evidenceType": "report",
+        "evidenceId": "oversight-review-20260909",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "href": "/observe/audit?report=oversight-review-20260909"
+      }
+    ]
+  },
+  "retentionClass": "ai-system-production-evidence",
+  "legalHoldIds": []
+}

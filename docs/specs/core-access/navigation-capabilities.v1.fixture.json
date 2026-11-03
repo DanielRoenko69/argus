@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "fixtureKind": "navigation-capability-response-examples",
+  "examples": [
+    {
+      "name": "developer-with-argus-dev",
+      "response": {
+        "schemaVersion": 1,
+        "generatedAt": "2026-09-07T12:00:00.000Z",
+        "actor": { "id": 17, "role": "developer" },
+        "permissions": ["agents.chat", "agents.manage", "agents.read", "agents.run", "ai_system.read", "aiops.investigation.review", "aiops.investigation.run", "aiops.remediation.propose", "aiops.service_profile.read", "aiops.service_profile.write", "approvals.review", "audit.read", "evaluations.run", "governance.read", "integrations.read", "knowledge.manage", "knowledge.read", "observability.read", "repository_graph.read", "runs.read_all", "runs.read_own", "skills.manage", "skills.read", "tags.manage", "tags.read", "workflows.manage", "workflows.read", "workflows.run", "workspace.search"],
+        "modules": [
+          { "id": "argus.core", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "argus.dev", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "argus.aiops", "installed": false, "entitled": true, "available": false, "reason": "not_installed" },
+          { "id": "argus.hermes", "installed": false, "entitled": true, "available": false, "reason": "not_installed" },
+          { "id": "public-channels", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "compliance", "installed": true, "entitled": false, "available": false, "reason": "not_entitled" }
+        ],
+        "navigation": {
+          "canUseArgusDev": true,
+          "canBuildWorkflows": true,
+          "canManageAgents": true,
+          "canManageIntegrations": false,
+          "canManageKnowledge": true,
+          "canRunEvaluations": true,
+          "canReviewApprovals": true,
+          "canObservePlatform": true,
+          "canReadAuditEvidence": true,
+          "canManageRuntimePolicy": false,
+          "canUseCompliance": false,
+          "canManagePublicChannels": false,
+          "canSearchWorkspaceResources": true,
+          "canAdminPlatform": false
+        }
+      }
+    },
+    {
+      "name": "operator-approver",
+      "response": {
+        "schemaVersion": 1,
+        "generatedAt": "2026-09-07T12:00:00.000Z",
+        "actor": { "id": 18, "role": "agent_operator" },
+        "permissions": ["agents.chat", "agents.read", "agents.run", "ai_system.read", "aiops.investigation.review", "aiops.investigation.run", "aiops.service_profile.read", "approvals.review", "audit.read", "governance.read", "integrations.read", "knowledge.read", "observability.read", "repository_graph.read", "runs.read_all", "runs.read_own", "skills.read", "tags.read", "workflows.read", "workflows.run", "workspace.search"],
+        "modules": [
+          { "id": "argus.core", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "argus.dev", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "argus.aiops", "installed": false, "entitled": false, "available": false, "reason": "not_installed" },
+          { "id": "argus.hermes", "installed": false, "entitled": false, "available": false, "reason": "not_installed" },
+          { "id": "public-channels", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "compliance", "installed": true, "entitled": false, "available": false, "reason": "not_entitled" }
+        ],
+        "navigation": {
+          "canUseArgusDev": true,
+          "canBuildWorkflows": false,
+          "canManageAgents": false,
+          "canManageIntegrations": false,
+          "canManageKnowledge": false,
+          "canRunEvaluations": false,
+          "canReviewApprovals": true,
+          "canObservePlatform": true,
+          "canReadAuditEvidence": true,
+          "canManageRuntimePolicy": false,
+          "canUseCompliance": false,
+          "canManagePublicChannels": false,
+          "canSearchWorkspaceResources": true,
+          "canAdminPlatform": false
+        }
+      }
+    },
+    {
+      "name": "auditor-scoped-assignment",
+      "note": "Auditor is a viewer preset plus scoped audit.read and audit.export assignments; it is not a seventh legacy role.",
+      "response": {
+        "schemaVersion": 1,
+        "generatedAt": "2026-09-07T12:00:00.000Z",
+        "actor": { "id": 19, "role": "viewer" },
+        "permissions": ["agents.chat", "agents.read", "ai_system.read", "aiops.service_profile.read", "audit.export", "audit.read", "compliance.read", "governance.read", "integrations.read", "knowledge.read", "observability.read", "repository_graph.read", "runs.read_own", "skills.read", "tags.read", "workflows.read", "workspace.search"],
+        "modules": [
+          { "id": "argus.core", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "argus.dev", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "argus.aiops", "installed": false, "entitled": false, "available": false, "reason": "not_installed" },
+          { "id": "argus.hermes", "installed": false, "entitled": false, "available": false, "reason": "not_installed" },
+          { "id": "public-channels", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "compliance", "installed": true, "entitled": true, "available": true, "reason": "available" }
+        ],
+        "navigation": {
+          "canUseArgusDev": false,
+          "canBuildWorkflows": false,
+          "canManageAgents": false,
+          "canManageIntegrations": false,
+          "canManageKnowledge": false,
+          "canRunEvaluations": false,
+          "canReviewApprovals": false,
+          "canObservePlatform": true,
+          "canReadAuditEvidence": true,
+          "canManageRuntimePolicy": false,
+          "canUseCompliance": true,
+          "canManagePublicChannels": false,
+          "canSearchWorkspaceResources": true,
+          "canAdminPlatform": false
+        }
+      }
+    },
+    {
+      "name": "platform-admin",
+      "response": {
+        "schemaVersion": 1,
+        "generatedAt": "2026-09-07T12:00:00.000Z",
+        "actor": { "id": 1, "role": "platform_admin" },
+        "permissions": ["access.manage", "agents.chat", "agents.manage", "agents.read", "agents.run", "ai_system.classify", "ai_system.create", "ai_system.manage", "ai_system.read", "ai_system.release", "ai_system.suspend", "aiops.investigation.review", "aiops.investigation.run", "aiops.remediation.approve", "aiops.remediation.execute", "aiops.remediation.propose", "aiops.service_profile.activate", "aiops.service_profile.read", "aiops.service_profile.write", "approvals.override_four_eyes", "approvals.review", "audit.export", "audit.legal_hold_manage", "audit.read", "audit.retention_manage", "compliance.control_manage", "compliance.dossier_export", "compliance.dossier_generate", "compliance.exception_manage", "compliance.external_anchor", "compliance.manage", "compliance.read", "compliance.review", "data_governance.manage", "evaluation.approve", "evaluations.run", "governance.read", "incident.manage", "incident.regulatory_report", "integrations.manage", "integrations.read", "knowledge.manage", "knowledge.read", "observability.read", "oversight.manage", "platform.admin", "public_channels.manage", "repository_graph.read", "restore_drill.execute", "retention.execute", "risk.manage", "runs.read_all", "runs.read_own", "runtime_policy.manage", "skills.manage", "skills.read", "tags.manage", "tags.read", "workflows.manage", "workflows.read", "workflows.run", "workspace.search"],
+        "modules": [
+          { "id": "argus.core", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "argus.dev", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "argus.aiops", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "argus.hermes", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "public-channels", "installed": true, "entitled": true, "available": true, "reason": "available" },
+          { "id": "compliance", "installed": true, "entitled": true, "available": true, "reason": "available" }
+        ],
+        "navigation": {
+          "canUseArgusDev": true,
+          "canBuildWorkflows": true,
+          "canManageAgents": true,
+          "canManageIntegrations": true,
+          "canManageKnowledge": true,
+          "canRunEvaluations": true,
+          "canReviewApprovals": true,
+          "canObservePlatform": true,
+          "canReadAuditEvidence": true,
+          "canManageRuntimePolicy": true,
+          "canUseCompliance": true,
+          "canManagePublicChannels": true,
+          "canSearchWorkspaceResources": true,
+          "canAdminPlatform": true
+        }
+      }
+    }
+  ]
+}

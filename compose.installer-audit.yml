@@ -1,0 +1,15 @@
+# Docker-only installer transport for the local audit signing key. The key is
+# copied into an external named volume and mounted read-only into Core.
+services:
+  mcp-server:
+    environment:
+      ARGUS_AUDIT_EVIDENCE_V1_ENABLED: "true"
+      ARGUS_AUDIT_SIGNING_KEY_ID: ${ARGUS_AUDIT_SIGNING_KEY_ID:-local-audit-ed25519-v1}
+      ARGUS_AUDIT_SIGNING_PRIVATE_KEY_FILE: /run/secrets/audit/argus-audit-signing-key.pem
+    volumes:
+      - argus-installer-audit-signing:/run/secrets/audit:ro
+
+volumes:
+  argus-installer-audit-signing:
+    external: true
+    name: ${ARGUS_COMPOSE_PROJECT:-argus-core}-installer-audit-signing

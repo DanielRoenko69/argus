@@ -1,0 +1,36 @@
+# The installer invokes Docker Compose from inside a disposable container.
+# Build contexts are streamed by the inner Docker client, but bind mounts must
+# use the path understood by the host Docker engine. The installer discovers
+# that path from its own /workspace mount and exports ARGUS_HOST_CORE_DIR.
+
+services:
+  postgres:
+    volumes:
+      - type: bind
+        source: ${ARGUS_HOST_CORE_DIR:?ARGUS_HOST_CORE_DIR is set by the Docker installer}/db/init.sql
+        target: /docker-entrypoint-initdb.d/01-init.sql
+        read_only: true
+      - pgdata:/var/lib/postgresql/data
+
+  litellm:
+    volumes:
+      - type: bind
+        source: ${ARGUS_HOST_CORE_DIR:?ARGUS_HOST_CORE_DIR is set by the Docker installer}/litellm/config.yaml
+        target: /app/config.yaml
+        read_only: true
+
+  gitea-runner:
+    volumes:
+      - type: bind
+        source: ${ARGUS_HOST_CORE_DIR:?ARGUS_HOST_CORE_DIR is set by the Docker installer}/gitea/runner-config.yaml
+        target: /config.yaml
+        read_only: true
+      - gitea-runner-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  public-widget-demo-site:
+    volumes:
+      - type: bind
+        source: ${ARGUS_HOST_CORE_DIR:?ARGUS_HOST_CORE_DIR is set by the Docker installer}/demo/public-widget-site
+        target: /usr/share/nginx/html
+        read_only: true

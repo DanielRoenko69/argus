@@ -1,0 +1,4 @@
+FROM argus-workspace-dev-git:20260928
+COPY dist /app/dist
+COPY scripts/certify-code-generation.mjs /app/certify-code-generation.mjs
+ENTRYPOINT ["node", "/app/certify-code-generation.mjs"]

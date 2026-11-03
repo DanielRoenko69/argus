@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "kind": "ai-system-revision",
+  "aiSystemId": "10000000-0000-4000-8000-000000000001",
+  "revisionId": "10000000-0000-4000-8000-000000000002",
+  "revision": 3,
+  "revisionSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "displayName": "Argus Dev governed coding assistant",
+  "lifecycleState": "ready_for_independent_review",
+  "owner": {
+    "actorType": "user",
+    "actorId": "alex",
+    "displayName": "Alex"
+  },
+  "intendedPurpose": "Assist authenticated software developers with repository analysis, implementation proposals, governed code changes and tests. Production deployment and merge decisions remain under human control.",
+  "prohibitedUses": [
+    "Employment ranking or evaluation of natural persons",
+    "Autonomous safety-critical infrastructure decisions",
+    "Biometric categorisation, emotion recognition or social scoring"
+  ],
+  "targetUsers": ["Authenticated software developers", "Platform engineers"],
+  "affectedGroups": ["Repository contributors", "Service operators"],
+  "regions": ["EU/EEA"],
+  "marketRoles": [
+    {
+      "role": "provider",
+      "organisationId": "argus-project",
+      "organisationName": "Argus Project",
+      "rationale": "Publishes the configured governed AI-system release.",
+      "confirmedBy": {
+        "actorType": "user",
+        "actorId": "alex",
+        "displayName": "Alex"
+      },
+      "confirmedAt": "2026-09-09T08:15:00.000Z"
+    },
+    {
+      "role": "deployer",
+      "organisationId": "design-partner-a",
+      "organisationName": "Design Partner A",
+      "rationale": "Operates the system for its authenticated development team.",
+      "confirmedBy": {
+        "actorType": "external_reviewer",
+        "actorId": "partner-owner"
+      },
+      "confirmedAt": "2026-09-09T08:16:00.000Z"
+    }
+  ],
+  "prohibitedPracticeCheck": {
+    "decision": "clear",
+    "articleRefs": ["Article 5"],
+    "rationale": "The intended coding-assistance purpose does not include a prohibited practice; prohibited purposes are enforced as release boundaries.",
+    "decidedBy": {
+      "actorType": "external_reviewer",
+      "actorId": "legal-reviewer"
+    },
+    "decidedAt": "2026-09-09T08:20:00.000Z"
+  },
+  "classification": {
+    "assessmentId": "10000000-0000-4000-8000-000000000003",
+    "classification": "minimal_or_no_risk",
+    "articleRefs": ["Article 6", "Annex III"],
+    "annexRefs": [],
+    "rationale": "The defined purpose supports software development and does not make decisions in an Annex III high-risk area. Reassessment is mandatory if the purpose or affected groups change.",
+    "legalReviewRequired": true,
+    "assessedBy": {
+      "actorType": "external_reviewer",
+      "actorId": "legal-reviewer"
+    },
+    "assessedAt": "2026-09-09T08:22:00.000Z",
+    "nextReviewAt": "2026-12-09T08:22:00.000Z"
+  },
+  "componentBindings": [
+    {
+      "resourceType": "agent",
+      "resourceId": "developer-agent",
+      "revision": "12",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    {
+      "resourceType": "workflow",
+      "resourceId": "argus-dev-coding",
+      "revision": "8",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+    },
+    {
+      "resourceType": "model",
+      "resourceId": "openai-codex-runtime",
+      "revision": "gpt-5.3-codex-spark",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+    },
+    {
+      "resourceType": "mcp_bundle",
+      "resourceId": "governed-repository-tools",
+      "revision": "4",
+      "sha256": "6666666666666666666666666666666666666666666666666666666666666666"
+    }
+  ],
+  "dataCategories": ["Source code", "Repository metadata", "Issue content", "Actor and approval metadata"],
+  "controlCatalog": {
+    "catalogId": "eu-ai-act-2024-1689-core",
+    "catalogVersion": 1,
+    "catalogSha256": "7bf91d1981646aaba6da1076ffe5c1b8964cee548c024e623f27009387294ecf"
+  },
+  "createdAt": "2026-09-09T08:10:00.000Z",
+  "releasedAt": null
+}

@@ -1,0 +1,20 @@
+# Optional overlay for attaching an existing Hermes HTTP service to argus.hermes.
+# Keep this separate from compose.external-pack.yml so the Pack remains
+# fail-closed and credential-free unless an operator explicitly enables the
+# attached runtime.
+
+services:
+  argus-hermes:
+    environment:
+      # Existing installations override HERMES_BASE_URL. The default is the
+      # provider-neutral local Hermes service from compose.hermes-local.yml.
+      HERMES_BASE_URL: ${HERMES_BASE_URL:-http://hermes-upstream:8642}
+      HERMES_API_KEY_FILE: /run/secrets/argus-hermes-api-key
+    secrets:
+      - source: argus-hermes-api-key
+        target: argus-hermes-api-key
+        mode: 0444
+
+secrets:
+  argus-hermes-api-key:
+    file: ${ARGUS_HERMES_API_KEY_SOURCE_FILE:?ARGUS_HERMES_API_KEY_SOURCE_FILE must point to a readable Hermes API key file}

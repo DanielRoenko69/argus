@@ -1,0 +1,3 @@
+FROM argus-workspace-general-stacks:20260928
+COPY scripts/certify-general-stack.mjs /app/certify-general-stack.mjs
+ENTRYPOINT ["node", "/app/certify-general-stack.mjs"]

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "kind": "argus.golden-path-run",
+  "mode": "certification",
+  "status": "completed",
+  "title": "Triage Gitea issue #17 and notify the demo channel",
+  "startedAt": "2026-09-10T10:10:00.000Z",
+  "updatedAt": "2026-09-10T10:11:01.000Z",
+  "completedAt": "2026-09-10T10:11:01.000Z",
+  "scope": {
+    "tenantKey": "design-partner-a",
+    "workspaceKey": "default",
+    "environment": "demo"
+  },
+  "workflow": {
+    "id": "golden-path-dev-triage",
+    "revision": "1",
+    "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "saved": true,
+    "agent": {
+      "id": "agent-dev-triage",
+      "revision": "3",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  },
+  "runtime": {
+    "preferred": "hermes",
+    "selected": "hermes",
+    "fallbackAllowed": true,
+    "profileId": "runtime-profile-hermes-demo",
+    "grantSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "policy": {
+    "writeMode": "guarded",
+    "approvalRequired": true,
+    "separationOfDutiesRequired": true,
+    "policySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "writes": ["git_comment", "git_add_label", "slack_post_message"]
+  },
+  "correlation": {
+    "taskId": "golden-task-00017",
+    "externalIssueId": "gitea:argus/golden-path-demo:17",
+    "runId": "workflow-run-240",
+    "traceId": "0af7651916cd43dd8448eb211c80319c",
+    "runtimeTaskId": "hermes-task-240"
+  },
+  "stages": [
+    { "id": "preflight", "label": "Preflight", "state": "succeeded", "startedAt": "2026-09-10T10:10:00.000Z", "completedAt": "2026-09-10T10:10:01.000Z", "detail": "All required providers and controls are ready.", "resourceRefIds": ["task", "workflow"] },
+    { "id": "issue_ingestion", "label": "Issue ingestion", "state": "succeeded", "startedAt": "2026-09-10T10:10:01.000Z", "completedAt": "2026-09-10T10:10:02.000Z", "detail": "Issue #17 was normalized once.", "resourceRefIds": ["issue"] },
+    { "id": "repository_context", "label": "Repository context", "state": "succeeded", "startedAt": "2026-09-10T10:10:02.000Z", "completedAt": "2026-09-10T10:10:06.000Z", "detail": "Immutable repository context was bound to the run.", "resourceRefIds": ["snapshot"] },
+    { "id": "dev_analysis", "label": "Dev analysis", "state": "succeeded", "startedAt": "2026-09-10T10:10:06.000Z", "completedAt": "2026-09-10T10:10:20.000Z", "detail": "Hermes produced structured triage and validation evidence.", "resourceRefIds": ["runtime-task", "trace"] },
+    { "id": "policy_decision", "label": "Policy decision", "state": "succeeded", "startedAt": "2026-09-10T10:10:20.000Z", "completedAt": "2026-09-10T10:10:21.000Z", "detail": "Three bounded writes required approval.", "resourceRefIds": ["approval"] },
+    { "id": "approval", "label": "Human approval", "state": "succeeded", "startedAt": "2026-09-10T10:10:21.000Z", "completedAt": "2026-09-10T10:10:38.000Z", "detail": "A separate authorized user approved the exact payload.", "resourceRefIds": ["approval"] },
+    { "id": "external_action", "label": "External action", "state": "succeeded", "startedAt": "2026-09-10T10:10:38.000Z", "completedAt": "2026-09-10T10:10:44.000Z", "detail": "Git and Slack outcomes were written once and verified.", "resourceRefIds": ["issue"] },
+    { "id": "evidence", "label": "Evidence", "state": "succeeded", "startedAt": "2026-09-10T10:10:44.000Z", "completedAt": "2026-09-10T10:11:01.000Z", "detail": "Signed evidence was archived, restored and verified.", "resourceRefIds": ["trace", "report", "evidence-pack", "dossier", "worm-receipt", "restore-receipt"] }
+  ],
+  "approval": {
+    "id": "approval-240",
+    "state": "approved",
+    "planSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "payloadSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "targetSummary": "Comment and label Gitea issue #17, then post the same triage summary to argus-demo.",
+    "requestedAt": "2026-09-10T10:10:21.000Z",
+    "decidedAt": "2026-09-10T10:10:38.000Z",
+    "decidedBy": {
+      "actorType": "user",
+      "actorId": "pilot-approver",
+      "displayName": "Pilot Approver"
+    },
+    "rationale": "The bounded demo targets and payload match the reviewed plan.",
+    "allowedActions": []
+  },
+  "outcomes": [
+    { "target": "git", "operation": "comment", "state": "succeeded", "attemptCount": 1, "idempotencyKeySha256": "3333333333333333333333333333333333333333333333333333333333333333", "providerReceiptSha256": "7777777777777777777777777777777777777777777777777777777777777777", "verifiedAt": "2026-09-10T10:10:41.000Z", "retryable": false, "detail": "Comment exists on the exact issue." },
+    { "target": "git", "operation": "add_label", "state": "succeeded", "attemptCount": 1, "idempotencyKeySha256": "4444444444444444444444444444444444444444444444444444444444444444", "providerReceiptSha256": "8888888888888888888888888888888888888888888888888888888888888888", "verifiedAt": "2026-09-10T10:10:42.000Z", "retryable": false, "detail": "The triaged label exists on the exact issue." },
+    { "target": "slack", "operation": "post_message", "state": "succeeded", "attemptCount": 1, "idempotencyKeySha256": "5555555555555555555555555555555555555555555555555555555555555555", "providerReceiptSha256": "9999999999999999999999999999999999999999999999999999999999999999", "verifiedAt": "2026-09-10T10:10:44.000Z", "retryable": false, "detail": "The fixture retained one matching notification." }
+  ],
+  "evidence": {
+    "state": "complete",
+    "offlineVerifiable": true,
+    "gaps": [],
+    "resourceRefIds": ["trace", "report", "evidence-pack", "dossier", "worm-receipt", "restore-receipt"]
+  },
+  "resourceRefs": [
+    { "refId": "task", "type": "task", "id": "golden-task-00017", "label": "Golden Path task" },
+    { "refId": "issue", "type": "issue", "id": "gitea:argus/golden-path-demo:17", "label": "Gitea issue #17", "href": "http://localhost:3001/argus/golden-path-demo/issues/17" },
+    { "refId": "workflow", "type": "workflow", "id": "golden-path-dev-triage", "label": "Golden Path Dev triage v1", "href": "/build/workflows" },
+    { "refId": "snapshot", "type": "repository_snapshot", "id": "snapshot-golden-17", "label": "Immutable repository snapshot", "href": "/build/knowledge?view=repository-snapshots", "sha256": "6666666666666666666666666666666666666666666666666666666666666666" },
+    { "refId": "runtime-task", "type": "runtime_task", "id": "hermes-task-240", "label": "Hermes analysis task", "href": "/solutions/argus.dev" },
+    { "refId": "approval", "type": "approval", "id": "approval-240", "label": "External write approval", "href": "/runs/approvals/approval-240", "sha256": "2222222222222222222222222222222222222222222222222222222222222222" },
+    { "refId": "trace", "type": "trace", "id": "0af7651916cd43dd8448eb211c80319c", "label": "Distributed trace", "href": "/observe/logs?traceId=0af7651916cd43dd8448eb211c80319c" },
+    { "refId": "report", "type": "audit_report", "id": "audit-report-240", "label": "Golden Path audit report", "href": "/observe/audit?tab=reports" },
+    { "refId": "evidence-pack", "type": "evidence_pack", "id": "evidence-pack-240", "label": "Signed evidence pack", "sha256": "abababababababababababababababababababababababababababababababab" },
+    { "refId": "dossier", "type": "compliance_dossier", "id": "dossier-240", "label": "AI compliance support dossier", "href": "/governance/compliance", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+    { "refId": "worm-receipt", "type": "worm_receipt", "id": "worm-receipt-240", "label": "External archive receipt", "sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd" },
+    { "refId": "restore-receipt", "type": "restore_receipt", "id": "restore-receipt-240", "label": "Independent restore receipt", "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" }
+  ],
+  "allowedActions": ["retry", "open_trace", "open_report", "download_evidence"]
+}

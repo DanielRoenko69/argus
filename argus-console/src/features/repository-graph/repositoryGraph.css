@@ -1,0 +1,382 @@
+.repository-graph-dialog-backdrop {
+  align-items: center;
+  background: color-mix(in srgb, #02050a 78%, transparent);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 28px;
+  position: fixed;
+  z-index: 1200;
+}
+.repository-graph-dialog {
+  border-radius: 14px;
+  box-shadow: 0 28px 90px color-mix(in srgb, #000 72%, transparent);
+  height: min(860px, calc(100vh - 56px));
+  max-width: 1540px;
+  outline: 0;
+  width: min(1540px, calc(100vw - 56px));
+}
+.repository-graph-dialog > .repository-graph-viewer { height: 100%; min-height: 0; }
+
+.knowledge-code-graph-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.knowledge-code-graph-actions > span {
+  color: var(--text-tertiary, #7c899e);
+  font-size: 10px;
+}
+.knowledge-code-graph-button {
+  align-items: center;
+  background: color-mix(in srgb, var(--violet, #8c78ff) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--violet, #8c78ff) 36%, var(--border, #1d293b));
+  border-radius: 7px;
+  color: var(--violet, #8c78ff);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 750;
+  gap: 5px;
+  min-height: 30px;
+  padding: 0 9px;
+}
+.knowledge-code-graph-button:hover:not(:disabled) { background: color-mix(in srgb, var(--violet, #8c78ff) 22%, transparent); }
+.knowledge-code-graph-button:focus-visible { outline: 2px solid var(--violet, #8c78ff); outline-offset: 2px; }
+.knowledge-code-graph-button:disabled { cursor: not-allowed; opacity: .5; }
+
+.repository-graph-viewer {
+  --rg-file: var(--blue, #5da8ff);
+  --rg-symbol: var(--violet, #8c78ff);
+  --rg-module: var(--teal, #2ed3b7);
+  --rg-repository: var(--amber, #f0b84b);
+  background: var(--surface-raised, #121a28);
+  border: 1px solid var(--border, #1d293b);
+  border-radius: 14px;
+  color: var(--text, #e9eef8);
+  display: flex;
+  flex-direction: column;
+  min-height: 620px;
+  overflow: hidden;
+}
+.repository-graph-viewer button,
+.repository-graph-viewer input,
+.repository-graph-viewer select { font: inherit; }
+.repository-graph-viewer button { cursor: pointer; }
+.repository-graph-viewer button:disabled { cursor: not-allowed; opacity: .55; }
+.repository-graph-viewer button:focus-visible,
+.repository-graph-viewer input:focus-visible,
+.repository-graph-viewer select:focus-visible,
+.repository-graph-viewer [tabindex="0"]:focus-visible { outline: 2px solid var(--violet, #8c78ff); outline-offset: 2px; }
+
+.repository-graph-header {
+  align-items: center;
+  border-bottom: 1px solid var(--border, #1d293b);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+.repository-graph-title { align-items: center; display: flex; gap: 11px; min-width: 0; }
+.repository-graph-title > span {
+  align-items: center;
+  background: color-mix(in srgb, var(--violet, #8c78ff) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--violet, #8c78ff) 35%, var(--border, #1d293b));
+  border-radius: 9px;
+  color: var(--violet, #8c78ff);
+  display: flex;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+.repository-graph-title small { color: var(--violet, #8c78ff); font-size: 9px; font-weight: 800; letter-spacing: .09em; }
+.repository-graph-title h2 { font-size: 16px; margin: 2px 0; }
+.repository-graph-title p { color: var(--text-tertiary, #7c899e); font-size: 11px; margin: 0; }
+.repository-graph-header-actions { align-items: center; display: flex; gap: 8px; }
+.repository-graph-view-toggle {
+  background: var(--surface, #0e1420);
+  border: 1px solid var(--border, #1d293b);
+  border-radius: 7px;
+  display: flex;
+  padding: 2px;
+}
+.repository-graph-view-toggle button,
+.repository-graph-close {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: var(--text-tertiary, #7c899e);
+  display: flex;
+  font-size: 10px;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 8px;
+}
+.repository-graph-view-toggle button.is-active { background: var(--surface-hover, #172132); color: var(--text, #e9eef8); }
+.repository-graph-close { border: 1px solid var(--border, #1d293b); height: 32px; justify-content: center; padding: 0; width: 32px; }
+
+.repository-graph-identity {
+  align-items: center;
+  background: color-mix(in srgb, var(--teal, #2ed3b7) 5%, var(--surface, #0e1420));
+  border-bottom: 1px solid var(--border, #1d293b);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  min-height: 40px;
+  padding: 7px 16px;
+}
+.repository-graph-identity span { align-items: center; color: var(--text-secondary, #a9b4c6); display: flex; font-size: 10px; gap: 5px; min-width: 0; }
+.repository-graph-identity span:first-child { color: var(--teal, #2ed3b7); }
+.repository-graph-identity code { color: var(--text, #e9eef8); display: inline-block; font-family: var(--font-mono, monospace); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.repository-graph-breadcrumb {
+  align-items: center;
+  background: var(--surface, #0e1420);
+  border-bottom: 1px solid var(--border, #1d293b);
+  color: var(--text-tertiary, #7c899e);
+  display: flex;
+  gap: 5px;
+  min-height: 34px;
+  overflow: hidden;
+  padding: 4px 16px;
+}
+.repository-graph-breadcrumb button,
+.repository-graph-breadcrumb span { font-size: 9px; white-space: nowrap; }
+.repository-graph-breadcrumb button { background: transparent; border: 0; color: var(--violet, #8c78ff); padding: 4px; }
+.repository-graph-breadcrumb span { color: var(--text-secondary, #a9b4c6); max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
+.repository-graph-breadcrumb .repository-graph-back { align-items: center; border: 1px solid var(--border, #1d293b); border-radius: 5px; display: flex; gap: 4px; margin-right: 5px; padding: 4px 7px; }
+.repository-graph-breadcrumb .repository-graph-back:disabled { color: var(--text-tertiary, #7c899e); cursor: default; opacity: .45; }
+
+.repository-graph-body { display: grid; flex: 1; grid-template-columns: 210px minmax(0, 1fr) 250px; min-height: 0; }
+.repository-graph-filters,
+.repository-graph-details,
+.repository-graph-architecture-panel,
+.repository-full-graph-panel,
+.repository-full-graph-details { background: var(--surface, #0e1420); min-width: 0; padding: 13px; }
+.repository-graph-filters { border-right: 1px solid var(--border, #1d293b); }
+.repository-graph-architecture-panel,
+.repository-full-graph-panel { border-right: 1px solid var(--border, #1d293b); overflow: auto; }
+.repository-graph-details,
+.repository-full-graph-details { border-left: 1px solid var(--border, #1d293b); overflow: auto; }
+.repository-graph-filters label,
+.repository-graph-filters legend { color: var(--text-secondary, #a9b4c6); font-size: 10px; font-weight: 700; }
+.repository-graph-search-field { align-items: center; background: var(--canvas, #090e17); border: 1px solid var(--border, #1d293b); border-radius: 7px; display: grid; gap: 5px; grid-template-columns: 16px minmax(0, 1fr) auto; margin-top: 6px; padding-left: 8px; }
+.repository-graph-search-field svg { color: var(--text-tertiary, #7c899e); }
+.repository-graph-search-field input { background: transparent; border: 0; color: var(--text, #e9eef8); min-height: 34px; min-width: 0; outline: 0; }
+.repository-graph-search-field button,
+.repository-graph-apply {
+  align-items: center;
+  background: color-mix(in srgb, var(--violet, #8c78ff) 16%, transparent);
+  border: 0;
+  border-left: 1px solid var(--border, #1d293b);
+  color: var(--violet, #8c78ff);
+  display: flex;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 8px;
+}
+.repository-graph-filters fieldset { border: 0; border-top: 1px solid var(--border, #1d293b); display: grid; gap: 7px; margin: 14px 0 0; padding: 12px 0 0; }
+.repository-graph-filters fieldset legend { padding: 0; text-transform: uppercase; }
+.repository-graph-filters fieldset label { align-items: center; display: flex; font-weight: 500; gap: 6px; }
+.repository-graph-filters fieldset input { accent-color: var(--violet, #8c78ff); }
+.repository-graph-filters fieldset p { color: var(--text-tertiary, #7c899e); font-size: 9px; line-height: 1.45; margin: 0; }
+.repository-graph-filter-selects { border-top: 1px solid var(--border, #1d293b); display: grid; gap: 7px; grid-template-columns: 1fr 70px; margin-top: 13px; padding-top: 12px; }
+.repository-graph-filter-selects label { display: grid; gap: 5px; }
+.repository-graph-filter-selects select { background: var(--canvas, #090e17); border: 1px solid var(--border, #1d293b); border-radius: 6px; color: var(--text-secondary, #a9b4c6); min-height: 31px; padding: 0 6px; }
+.repository-graph-apply { border: 1px solid color-mix(in srgb, var(--violet, #8c78ff) 34%, var(--border, #1d293b)); border-radius: 6px; justify-content: center; margin-top: 11px; width: 100%; }
+
+.repository-graph-architecture-panel > label { color: var(--text-secondary, #a9b4c6); font-size: 10px; font-weight: 700; }
+.repository-graph-architecture-search { align-items: center; background: var(--canvas, #090e17); border: 1px solid var(--border, #1d293b); border-radius: 7px; display: flex; gap: 7px; margin-top: 6px; padding: 0 8px; }
+.repository-graph-architecture-search svg { color: var(--text-tertiary, #7c899e); flex: none; }
+.repository-graph-architecture-search input { background: transparent; border: 0; color: var(--text, #e9eef8); min-height: 34px; min-width: 0; outline: 0; width: 100%; }
+.repository-graph-architecture-summary { border-top: 1px solid var(--border, #1d293b); margin-top: 14px; padding-top: 12px; }
+.repository-graph-architecture-summary h3 { color: var(--text-secondary, #a9b4c6); font-size: 9px; letter-spacing: .05em; margin: 0 0 8px; text-transform: uppercase; }
+.repository-graph-architecture-summary dl { display: grid; gap: 5px; margin: 0; }
+.repository-graph-architecture-summary dl > div { align-items: center; background: var(--surface-raised, #121a28); border: 1px solid var(--border, #1d293b); border-radius: 6px; display: flex; justify-content: space-between; min-height: 31px; padding: 0 8px; }
+.repository-graph-architecture-summary dt { align-items: center; color: var(--text-tertiary, #7c899e); display: flex; font-size: 9px; gap: 5px; }
+.repository-graph-architecture-summary dd { color: var(--text, #e9eef8); font-family: var(--font-mono, monospace); font-size: 10px; font-weight: 700; margin: 0; }
+.repository-graph-architecture-visible,
+.repository-graph-architecture-note { color: var(--text-tertiary, #7c899e); font-size: 9px; line-height: 1.5; margin: 12px 0 0; }
+.repository-graph-architecture-visible b { color: var(--text-secondary, #a9b4c6); }
+.repository-graph-architecture-note { border-top: 1px solid var(--border, #1d293b); padding-top: 11px; }
+.repository-graph-architecture-refresh,
+.repository-graph-architecture-reset { align-items: center; background: transparent; border: 1px solid var(--border, #1d293b); border-radius: 6px; color: var(--violet, #8c78ff); display: flex; font-size: 9px; gap: 5px; justify-content: center; margin-top: 10px; min-height: 31px; width: 100%; }
+.repository-graph-architecture-reset { background: color-mix(in srgb, var(--violet, #8c78ff) 10%, transparent); }
+.repository-graph-code-atlas { align-items: center; background: linear-gradient(135deg, color-mix(in srgb, var(--violet, #8c78ff) 28%, var(--surface-raised, #121a28)), color-mix(in srgb, var(--cyan, #39d7c3) 11%, var(--surface-raised, #121a28))); border: 1px solid color-mix(in srgb, var(--violet, #8c78ff) 58%, var(--border, #1d293b)); border-radius: 8px; box-shadow: 0 8px 24px color-mix(in srgb, var(--violet, #8c78ff) 13%, transparent); color: var(--text, #e9eef8); display: flex; font-size: 10px; font-weight: 700; gap: 8px; justify-content: flex-start; margin-top: 12px; min-height: 43px; padding: 7px 10px; text-align: left; width: 100%; }
+.repository-graph-code-atlas > svg { color: var(--cyan, #39d7c3); flex: none; }
+.repository-graph-code-atlas > span { display: grid; gap: 2px; }
+.repository-graph-code-atlas small { color: var(--text-tertiary, #7c899e); font-family: var(--font-mono, monospace); font-size: 8px; font-weight: 500; }
+.repository-graph-code-atlas:hover { border-color: var(--violet, #8c78ff); transform: translateY(-1px); }
+.repository-graph-code-atlas:focus-visible { outline: 2px solid var(--focus, #7aa2ff); outline-offset: 2px; }
+.repository-graph-code-atlas:disabled { cursor: progress; opacity: .62; transform: none; }
+
+.repository-full-graph-panel-title { align-items: flex-start; color: var(--violet, #8c78ff); display: flex; gap: 8px; }
+.repository-full-graph-panel-title > div { display: grid; gap: 2px; min-width: 0; }
+.repository-full-graph-panel-title b { color: var(--text, #e9eef8); font-size: 11px; }
+.repository-full-graph-panel-title span,
+.repository-full-graph-panel > p { color: var(--text-tertiary, #7c899e); font-size: 9px; line-height: 1.45; }
+.repository-full-graph-panel form { border-top: 1px solid var(--border, #1d293b); margin-top: 13px; padding-top: 12px; }
+.repository-full-graph-panel form label { color: var(--text-secondary, #a9b4c6); font-size: 9px; font-weight: 700; }
+.repository-full-graph-panel form > div { align-items: center; background: var(--canvas, #090e17); border: 1px solid var(--border, #1d293b); border-radius: 7px; display: grid; gap: 5px; grid-template-columns: 15px minmax(0, 1fr) auto; margin-top: 6px; padding-left: 7px; }
+.repository-full-graph-panel form svg { color: var(--text-tertiary, #7c899e); }
+.repository-full-graph-panel input { background: transparent; border: 0; color: var(--text, #e9eef8); font-size: 9px; min-height: 33px; min-width: 0; outline: 0; }
+.repository-full-graph-panel form button { align-self: stretch; background: color-mix(in srgb, var(--violet, #8c78ff) 15%, transparent); border: 0; border-left: 1px solid var(--border, #1d293b); color: var(--violet, #8c78ff); font-size: 9px; font-weight: 700; padding: 0 7px; }
+.repository-full-graph-stats { border-top: 1px solid var(--border, #1d293b); display: grid; gap: 5px; margin: 13px 0 0; padding-top: 12px; }
+.repository-full-graph-stats > div { align-items: center; background: var(--surface-raised, #121a28); border: 1px solid var(--border, #1d293b); border-radius: 6px; display: flex; justify-content: space-between; min-height: 31px; padding: 0 8px; }
+.repository-full-graph-stats dt { color: var(--text-tertiary, #7c899e); font-size: 8px; text-transform: uppercase; }
+.repository-full-graph-stats dd { color: var(--text, #e9eef8); font-family: var(--font-mono, monospace); font-size: 10px; font-weight: 700; margin: 0; }
+.repository-full-graph-back { align-items: center; background: color-mix(in srgb, var(--violet, #8c78ff) 10%, transparent); border: 1px solid var(--border, #1d293b); border-radius: 6px; color: var(--violet, #8c78ff); display: flex; font-size: 9px; gap: 5px; justify-content: center; margin-top: 12px; min-height: 32px; width: 100%; }
+
+.repository-full-graph-canvas { background: radial-gradient(circle at center, color-mix(in srgb, var(--violet, #8c78ff) 4%, var(--canvas, #090e17)), var(--canvas, #090e17) 66%); display: flex; flex: 1; min-height: 430px; min-width: 0; overflow: hidden; position: relative; }
+.repository-full-graph-canvas canvas { cursor: grab; display: block; height: 100%; touch-action: none; width: 100%; }
+.repository-full-graph-canvas canvas.is-panning { cursor: grabbing; }
+.repository-full-graph-controls { align-items: center; background: color-mix(in srgb, var(--surface-raised, #121a28) 94%, transparent); border: 1px solid var(--border, #1d293b); border-radius: 7px; box-shadow: 0 6px 20px color-mix(in srgb, #000 30%, transparent); display: flex; left: 10px; padding: 2px; position: absolute; top: 10px; z-index: 2; }
+.repository-full-graph-controls button { align-items: center; background: transparent; border: 0; border-radius: 4px; color: var(--text-secondary, #a9b4c6); display: flex; height: 27px; justify-content: center; width: 27px; }
+.repository-full-graph-controls button:hover { background: var(--surface-hover, #172132); }
+.repository-full-graph-controls output { color: var(--text-tertiary, #7c899e); font-family: var(--font-mono, monospace); font-size: 9px; min-width: 38px; text-align: center; }
+
+.repository-full-graph-empty { align-items: center; color: var(--text-tertiary, #7c899e); display: flex; flex-direction: column; height: 100%; justify-content: center; text-align: center; }
+.repository-full-graph-empty b { color: var(--text-secondary, #a9b4c6); font-size: 11px; margin-top: 8px; }
+.repository-full-graph-empty span { font-size: 9px; line-height: 1.5; margin-top: 4px; }
+.repository-full-graph-node-heading { align-items: flex-start; display: grid; gap: 8px; grid-template-columns: 30px minmax(0, 1fr); }
+.repository-full-graph-node-heading > span { align-items: center; background: color-mix(in srgb, var(--violet, #8c78ff) 14%, transparent); border-radius: 7px; color: var(--violet, #8c78ff); display: flex; height: 30px; justify-content: center; }
+.repository-full-graph-node-heading small { color: var(--violet, #8c78ff); font-size: 8px; font-weight: 800; }
+.repository-full-graph-node-heading h3 { font-size: 12px; margin: 2px 0; overflow-wrap: anywhere; }
+.repository-full-graph-node-heading code { color: var(--text-tertiary, #7c899e); font-size: 8px; }
+.repository-full-graph-details dl { border-bottom: 1px solid var(--border, #1d293b); border-top: 1px solid var(--border, #1d293b); margin: 13px 0; padding: 7px 0; }
+.repository-full-graph-details dl div { display: grid; gap: 7px; grid-template-columns: 58px minmax(0, 1fr); padding: 4px 0; }
+.repository-full-graph-details dt { color: var(--text-tertiary, #7c899e); font-size: 8px; text-transform: uppercase; }
+.repository-full-graph-details dd { align-items: center; color: var(--text-secondary, #a9b4c6); display: flex; font-family: var(--font-mono, monospace); font-size: 8px; gap: 4px; margin: 0; overflow-wrap: anywhere; }
+.repository-full-graph-details section { border-top: 1px solid var(--border, #1d293b); padding-top: 10px; }
+.repository-full-graph-details h4 { color: var(--text-secondary, #a9b4c6); font-size: 9px; margin: 0 0 7px; text-transform: uppercase; }
+.repository-full-graph-details h4 span { color: var(--text-tertiary, #7c899e); }
+.repository-full-graph-details section button { align-items: flex-start; background: var(--surface-raised, #121a28); border: 1px solid var(--border, #1d293b); border-radius: 6px; color: var(--text-secondary, #a9b4c6); display: grid; gap: 2px; margin-bottom: 5px; padding: 6px 7px; text-align: left; width: 100%; }
+.repository-full-graph-details section button span { font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+.repository-full-graph-details section button small,
+.repository-full-graph-details section p { color: var(--text-tertiary, #7c899e); font-size: 8px; }
+
+.repository-graph-main { background: var(--canvas, #090e17); display: flex; flex-direction: column; min-height: 470px; min-width: 0; overflow: hidden; position: relative; }
+.repository-graph-error,
+.repository-graph-truncation { align-items: center; border-bottom: 1px solid; display: flex; font-size: 10px; gap: 7px; min-height: 36px; padding: 6px 10px; }
+.repository-graph-error { background: color-mix(in srgb, var(--red, #ef6b73) 11%, var(--surface, #0e1420)); border-color: color-mix(in srgb, var(--red, #ef6b73) 32%, var(--border, #1d293b)); color: var(--red, #ef6b73); }
+.repository-graph-error span,
+.repository-graph-truncation span { flex: 1; }
+.repository-graph-error button { align-items: center; background: transparent; border: 1px solid currentColor; border-radius: 5px; color: inherit; display: flex; font-size: 9px; gap: 4px; min-height: 24px; }
+.repository-graph-truncation { background: color-mix(in srgb, var(--amber, #f0b84b) 10%, var(--surface, #0e1420)); border-color: color-mix(in srgb, var(--amber, #f0b84b) 28%, var(--border, #1d293b)); color: var(--amber, #f0b84b); }
+.repository-graph-start,
+.repository-graph-loading { align-items: center; color: var(--text-tertiary, #7c899e); display: flex; flex: 1; flex-direction: column; justify-content: center; padding: 40px; text-align: center; }
+.repository-graph-start h3 { color: var(--text-secondary, #a9b4c6); font-size: 14px; margin: 10px 0 4px; }
+.repository-graph-start p { font-size: 11px; line-height: 1.55; margin: 0; max-width: 390px; }
+.repository-graph-loading { flex-direction: row; font-size: 11px; gap: 8px; }
+
+.repository-graph-canvas { display: flex; flex: 1; min-height: 390px; min-width: 0; overflow: hidden; position: relative; }
+.repository-graph-canvas-controls { align-items: center; background: color-mix(in srgb, var(--surface-raised, #121a28) 94%, transparent); border: 1px solid var(--border, #1d293b); border-radius: 7px; display: flex; left: 10px; padding: 2px; position: absolute; top: 10px; z-index: 2; }
+.repository-graph-canvas-controls button { align-items: center; background: transparent; border: 0; border-radius: 4px; color: var(--text-secondary, #a9b4c6); display: flex; height: 27px; justify-content: center; width: 27px; }
+.repository-graph-canvas-controls button:hover { background: var(--surface-hover, #172132); }
+.repository-graph-canvas-controls output { color: var(--text-tertiary, #7c899e); font-family: var(--font-mono, monospace); font-size: 9px; min-width: 37px; text-align: center; }
+.repository-graph-canvas-viewport { cursor: grab; flex: 1; min-width: 0; overflow: auto; overscroll-behavior: contain; }
+.repository-graph-canvas-viewport.is-panning { cursor: grabbing; user-select: none; }
+.repository-graph-canvas-stage { background-image: radial-gradient(circle, color-mix(in srgb, var(--text-tertiary, #7c899e) 23%, transparent) 1px, transparent 1px); background-size: 18px 18px; display: block; }
+.repository-graph-edges path { fill: none; stroke: color-mix(in srgb, var(--text-tertiary, #7c899e) 47%, transparent); stroke-width: 1.4; }
+.repository-graph-edges path.is-containment { opacity: .2; stroke-dasharray: 3 5; }
+.repository-graph-edges path.is-dependency { opacity: .72; }
+.repository-graph-edges marker path { fill: var(--text-tertiary, #7c899e); stroke: none; }
+.repository-graph-node { cursor: pointer; }
+.repository-graph-node rect { fill: var(--surface-raised, #121a28); stroke: var(--border-strong, #2a384d); stroke-width: 1.2; }
+.repository-graph-node:hover rect,
+.repository-graph-node:focus rect { fill: var(--surface-hover, #172132); stroke: var(--text-tertiary, #7c899e); }
+.repository-graph-node.is-selected rect { fill: color-mix(in srgb, var(--violet, #8c78ff) 12%, var(--surface-raised, #121a28)); stroke: var(--violet, #8c78ff); stroke-width: 2; }
+.repository-graph-node.is-focus rect { filter: drop-shadow(0 0 7px color-mix(in srgb, var(--violet, #8c78ff) 54%, transparent)); stroke: var(--violet, #8c78ff); stroke-width: 2.2; }
+.repository-graph-node-kind { fill: var(--text-tertiary, #7c899e); font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.repository-graph-node-label { fill: var(--text, #e9eef8); font-size: 11px; font-weight: 700; }
+.repository-graph-node-icon { align-items: center; background: var(--surface, #0e1420); border: 1px solid var(--border, #1d293b); border-radius: 6px; color: var(--rg-symbol); display: flex; height: 24px; justify-content: center; width: 24px; }
+.repository-graph-node.is-file .repository-graph-node-icon { color: var(--rg-file); }
+.repository-graph-node.is-module .repository-graph-node-icon { color: var(--rg-module); }
+.repository-graph-node.is-repository .repository-graph-node-icon { color: var(--rg-repository); }
+.repository-graph-node.is-repository rect { fill: color-mix(in srgb, var(--rg-repository) 8%, var(--surface-raised, #121a28)); stroke: color-mix(in srgb, var(--rg-repository) 48%, var(--border-strong, #2a384d)); }
+.repository-graph-node.is-module rect { fill: color-mix(in srgb, var(--rg-module) 5%, var(--surface-raised, #121a28)); }
+.repository-graph-minimap { background: color-mix(in srgb, var(--surface-raised, #121a28) 95%, transparent); border: 1px solid var(--border, #1d293b); border-radius: 7px; bottom: 10px; color: var(--text-tertiary, #7c899e); display: grid; grid-template-columns: 14px 90px; height: 58px; padding: 5px; position: absolute; right: 10px; width: 112px; }
+.repository-graph-minimap svg { height: 48px; width: 90px; }
+.repository-graph-minimap rect { fill: var(--rg-symbol); opacity: .55; }
+.repository-graph-minimap rect.is-file { fill: var(--rg-file); }
+.repository-graph-minimap rect.is-module { fill: var(--rg-module); }
+.repository-graph-minimap rect.is-repository { fill: var(--rg-repository); }
+.repository-graph-minimap rect.is-selected { opacity: 1; stroke: var(--text, #e9eef8); stroke-width: 4; }
+
+.repository-graph-status { align-items: center; background: var(--surface, #0e1420); border-top: 1px solid var(--border, #1d293b); display: flex; flex-wrap: wrap; gap: 8px; min-height: 36px; padding: 5px 9px; }
+.repository-graph-status span { align-items: center; color: var(--text-tertiary, #7c899e); display: flex; font-size: 9px; gap: 5px; margin-right: auto; }
+.repository-graph-status button,
+.repository-graph-status a { background: transparent; border: 1px solid var(--border, #1d293b); border-radius: 5px; color: var(--violet, #8c78ff); font-size: 9px; padding: 5px 7px; text-decoration: none; }
+
+.repository-graph-details.is-empty { align-items: center; color: var(--text-tertiary, #7c899e); display: flex; flex-direction: column; justify-content: center; text-align: center; }
+.repository-graph-details.is-empty b { color: var(--text-secondary, #a9b4c6); font-size: 12px; margin-top: 9px; }
+.repository-graph-details.is-empty p { font-size: 10px; line-height: 1.5; }
+.repository-graph-details > header { align-items: flex-start; display: grid; gap: 8px; grid-template-columns: 30px minmax(0, 1fr); }
+.repository-graph-details > header > span { align-items: center; background: color-mix(in srgb, var(--violet, #8c78ff) 14%, transparent); border-radius: 7px; color: var(--violet, #8c78ff); display: flex; height: 30px; justify-content: center; }
+.repository-graph-details > header small { color: var(--violet, #8c78ff); font-size: 8px; font-weight: 800; text-transform: uppercase; }
+.repository-graph-details > header h3 { font-size: 13px; margin: 2px 0; overflow-wrap: anywhere; }
+.repository-graph-details > header code { color: var(--text-tertiary, #7c899e); font-size: 8px; overflow-wrap: anywhere; }
+.repository-graph-details dl { border-bottom: 1px solid var(--border, #1d293b); border-top: 1px solid var(--border, #1d293b); margin: 13px 0; padding: 7px 0; }
+.repository-graph-details dl div { display: grid; gap: 7px; grid-template-columns: 76px minmax(0, 1fr); padding: 4px 0; }
+.repository-graph-details dt { color: var(--text-tertiary, #7c899e); font-size: 8px; text-transform: uppercase; }
+.repository-graph-details dd { color: var(--text-secondary, #a9b4c6); font-family: var(--font-mono, monospace); font-size: 9px; margin: 0; overflow-wrap: anywhere; }
+.repository-graph-authorized-link { align-items: center; color: var(--violet, #8c78ff); display: flex; font-size: 9px; gap: 5px; margin-bottom: 12px; }
+.repository-graph-details section { border-top: 1px solid var(--border, #1d293b); padding-top: 10px; }
+.repository-graph-details h4 { color: var(--text-secondary, #a9b4c6); font-size: 9px; letter-spacing: .04em; margin: 0 0 6px; text-transform: uppercase; }
+.repository-graph-details h4 span { color: var(--text-tertiary, #7c899e); }
+.repository-graph-details section p { color: var(--text-tertiary, #7c899e); font-size: 9px; line-height: 1.4; }
+.repository-graph-details ul { display: grid; gap: 4px; list-style: none; margin: 0 0 10px; padding: 0; }
+.repository-graph-details li button { align-items: center; background: var(--surface-raised, #121a28); border: 1px solid var(--border, #1d293b); border-radius: 6px; color: var(--text-tertiary, #7c899e); display: flex; gap: 6px; min-height: 34px; padding: 5px 7px; text-align: left; width: 100%; }
+.repository-graph-details li button span { min-width: 0; }
+.repository-graph-details li b,
+.repository-graph-details li small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.repository-graph-details li b { color: var(--text-secondary, #a9b4c6); font-size: 9px; }
+.repository-graph-details li small { font-size: 8px; }
+.repository-graph-explore { align-items: center; background: color-mix(in srgb, var(--violet, #8c78ff) 14%, transparent); border: 1px solid color-mix(in srgb, var(--violet, #8c78ff) 34%, var(--border, #1d293b)); border-radius: 6px; color: var(--violet, #8c78ff); display: flex; font-size: 9px; font-weight: 700; gap: 5px; justify-content: center; margin-top: 10px; min-height: 32px; width: 100%; }
+
+.repository-graph-list { flex: 1; overflow: auto; padding: 9px; }
+.repository-graph-list table { border-collapse: collapse; font-size: 10px; margin-bottom: 14px; width: 100%; }
+.repository-graph-list caption { color: var(--text-secondary, #a9b4c6); font-size: 10px; font-weight: 700; padding: 5px; text-align: left; }
+.repository-graph-list th,
+.repository-graph-list td { border-bottom: 1px solid var(--border, #1d293b); color: var(--text-secondary, #a9b4c6); max-width: 260px; padding: 7px; text-align: left; }
+.repository-graph-list thead th { color: var(--text-tertiary, #7c899e); font-size: 8px; letter-spacing: .04em; text-transform: uppercase; }
+.repository-graph-list tbody tr.is-selected { background: color-mix(in srgb, var(--violet, #8c78ff) 10%, transparent); }
+.repository-graph-list tbody button { background: transparent; border: 0; color: var(--violet, #8c78ff); font-weight: 700; padding: 0; text-align: left; }
+.repository-graph-list code { font-family: var(--font-mono, monospace); font-size: 9px; overflow-wrap: anywhere; }
+.repository-graph-list tbody:empty::after { color: var(--text-tertiary, #7c899e); content: 'No rows in this bounded neighborhood.'; display: table-cell; padding: 8px; }
+
+.repository-graph-viewer .is-spinning { animation: repository-graph-spin 1s linear infinite; }
+@keyframes repository-graph-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 1120px) {
+  .repository-graph-body { grid-template-columns: 190px minmax(0, 1fr); }
+  .repository-graph-details { border-left: 0; border-top: 1px solid var(--border, #1d293b); grid-column: 1 / -1; max-height: 260px; }
+  .repository-full-graph-details { border-left: 0; border-top: 1px solid var(--border, #1d293b); grid-column: 1 / -1; max-height: 260px; }
+}
+@media (max-width: 760px) {
+  .repository-graph-dialog-backdrop { padding: 0; }
+  .repository-graph-dialog { border-radius: 0; height: 100vh; width: 100vw; }
+  .repository-graph-dialog > .repository-graph-viewer { border-radius: 0; }
+  .knowledge-code-graph-actions { align-items: stretch; flex-direction: column; }
+  .knowledge-code-graph-button { justify-content: center; }
+  .repository-graph-header { align-items: flex-start; flex-direction: column; }
+  .repository-graph-header-actions { flex-wrap: wrap; justify-content: space-between; width: 100%; }
+  .repository-graph-identity { align-items: flex-start; flex-direction: column; }
+  .repository-graph-identity code { max-width: min(70vw, 420px); }
+  .repository-graph-breadcrumb { flex-wrap: wrap; overflow: visible; }
+  .repository-graph-body { display: flex; flex-direction: column; }
+  .repository-graph-filters { border-bottom: 1px solid var(--border, #1d293b); border-right: 0; }
+  .repository-graph-architecture-panel { border-bottom: 1px solid var(--border, #1d293b); border-right: 0; }
+  .repository-full-graph-panel { border-bottom: 1px solid var(--border, #1d293b); border-right: 0; }
+  .repository-graph-filters fieldset { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .repository-graph-filters fieldset legend { grid-column: 1 / -1; }
+  .repository-graph-main { min-height: 460px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .repository-graph-viewer .is-spinning { animation-duration: 2s; }
+}

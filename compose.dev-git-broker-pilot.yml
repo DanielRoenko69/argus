@@ -1,0 +1,28 @@
+# Matched local pilot: append LAST to the complete current overlay list.
+# Build and certify the matched Core/Dev/Workspace/controller images, apply
+# migrations 266/267/268 and confirm idle
+# workers before promotion. This does not configure OAuth or start a workflow.
+# New Dev source requires this Core adapter; do not deploy Dev on its own.
+services:
+  mcp-server:
+    image: argus-core-codegen:20260929-service-startup
+    environment:
+      ARGUS_DEV_GIT_BROKER_ENABLED: "true"
+      ARGUS_CODE_GENERATION_ENABLED: "true"
+      # Fixed local callback origin; production must use its reviewed HTTPS origin.
+      ARGUS_PUBLIC_URL: "http://localhost:3000"
+    volumes:
+      - dev-git-audit-outbox:/app/data
+  argus-dev:
+    image: argus-dev-codegen:20260929-service-startup
+    environment:
+      ARGUS_CODE_GENERATION_ENABLED: "true"
+  agent-workspace:
+    image: argus-workspace-codegen:20260929-service-startup
+    environment:
+      ARGUS_CODE_GENERATION_ENABLED: "true"
+  stack-runner:
+    image: argus-stack-controller-codegen:20260929-service-startup
+
+volumes:
+  dev-git-audit-outbox:

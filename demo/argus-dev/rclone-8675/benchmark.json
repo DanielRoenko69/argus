@@ -1,0 +1,40 @@
+{
+  "schema": "argus.dev-real-repository-acceptance.v1",
+  "id": "rclone-concurrent-bisync-8675",
+  "difficulty": "hard",
+  "repository": {
+    "upstream": "https://github.com/rclone/rclone.git",
+    "local": "http://gitea:3000/argus/argus-dev-rclone-8675.git",
+    "sourceRef": "fc5bd21e28fe8beee3e0f544a30f9d9552250901",
+    "defaultBranch": "main"
+  },
+  "upstreamEvidence": {
+    "issue": "https://github.com/rclone/rclone/issues/8675",
+    "acceptedPullRequest": "https://github.com/rclone/rclone/pull/8708",
+    "pullRequestHead": "8c38e4d77a929ba15c540e7fbdc66bed7cb3a9ad",
+    "fixCommit": "269abb1aeebce4d5779b343b169b11afabbd0bf5"
+  },
+  "ticket": {
+    "id": "RCLONE-8675",
+    "description": "Make bisync safe when multiple asynchronous RC jobs run concurrently in the same process. Mutable state belonging to one bisync invocation must not be shared with or reset underneath another invocation. Cover listing, comparison, marching, queueing, logging, conflict resolution and cleanup paths; preserve existing CLI and single-run behavior; add a race-detector regression test; run the focused bisync suite with -race; and stop at governed human approval before any branch push or pull request."
+  },
+  "expectedChangeSurface": {
+    "areas": [
+      "cmd/bisync"
+    ],
+    "forbidden": [
+      "a package-wide mutex around the complete bisync operation",
+      "disabling asynchronous RC execution",
+      "removing race-detector coverage",
+      "skipping existing bisync scenarios"
+    ]
+  },
+  "oracle": {
+    "projectInstallCommand": "go mod download",
+    "targetedTestCommand": "go test -race ./cmd/bisync -run '^TestArgusBisyncConcurrent$' -remote local -count=1",
+    "projectTestCommand": "go test -race ./cmd/bisync -remote local -count=1",
+    "buildCommand": "go test ./cmd/bisync -run '^$'",
+    "behaviorTest": "demo/argus-dev/rclone-8675/argus_concurrency_oracle_test.go",
+    "temporaryTarget": "cmd/bisync/argus_concurrency_oracle_test.go"
+  }
+}

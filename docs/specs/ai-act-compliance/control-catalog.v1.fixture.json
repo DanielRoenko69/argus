@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "kind": "ai-act-control-catalog",
+  "catalogId": "eu-ai-act-2024-1689-core",
+  "catalogVersion": 1,
+  "catalogSha256": "7bf91d1981646aaba6da1076ffe5c1b8964cee548c024e623f27009387294ecf",
+  "effectiveFrom": "2024-08-01T00:00:00.000Z",
+  "legalSource": {
+    "regulation": "Regulation (EU) 2024/1689",
+    "title": "European Union Artificial Intelligence Act",
+    "url": "https://eur-lex.europa.eu/eli/reg/2024/1689/oj"
+  },
+  "claimBoundary": "Coverage records technical, documentary and organisational evidence for a pinned AI-system revision. It is not an automatic legal conformity decision or certification.",
+  "controls": [
+    {
+      "controlId": "AIA-ART5-PROHIBITED-PRACTICES",
+      "articleRefs": ["Article 5"],
+      "title": "Prohibited-practice screening",
+      "description": "A released system must have a reviewed intended-purpose screening and must fail closed when a prohibited practice is identified.",
+      "applicability": "always",
+      "enforcement": "hybrid",
+      "blocksProduction": true,
+      "evidenceKinds": ["classification_assessment", "review_decision", "policy_gate"],
+      "responsibilities": [
+        {
+          "party": "argus_platform",
+          "responsibility": "Enforce versioned screening and block prohibited releases.",
+          "required": true
+        },
+        {
+          "party": "provider",
+          "responsibility": "Describe and legally assess intended and foreseeable use.",
+          "required": true
+        }
+      ],
+      "customerInputs": ["Intended purpose", "Foreseeable misuse", "Legal review owner"]
+    },
+    {
+      "controlId": "AIA-ART9-RISK-MANAGEMENT",
+      "articleRefs": ["Article 9"],
+      "title": "Lifecycle risk management",
+      "description": "Risks, treatments, residual risks, tests and approvals remain versioned throughout the system lifecycle.",
+      "applicability": "high_risk",
+      "enforcement": "hybrid",
+      "blocksProduction": true,
+      "evidenceKinds": ["risk_register", "treatment", "evaluation", "risk_acceptance"],
+      "responsibilities": [
+        {
+          "party": "argus_platform",
+          "responsibility": "Version and enforce risk-control and reassessment gates.",
+          "required": true
+        },
+        {
+          "party": "provider",
+          "responsibility": "Own system risks, treatments and residual-risk decisions.",
+          "required": true
+        }
+      ],
+      "customerInputs": ["Domain risks", "Acceptance thresholds", "Risk owner"]
+    },
+    {
+      "controlId": "AIA-ART12-RECORD-KEEPING",
+      "articleRefs": ["Article 12", "Article 19"],
+      "title": "Traceable automatic record keeping",
+      "description": "Production activity is correlated to the exact system, control, model, policy, tool and oversight revision.",
+      "applicability": "high_risk",
+      "enforcement": "technical",
+      "blocksProduction": true,
+      "evidenceKinds": ["canonical_event", "run", "trace", "signed_checkpoint"],
+      "responsibilities": [
+        {
+          "party": "argus_platform",
+          "responsibility": "Produce tamper-evident bounded logs and offline-verifiable exports.",
+          "required": true
+        },
+        {
+          "party": "provider",
+          "responsibility": "Choose lawful retention and ensure relevant paths use governed execution.",
+          "required": true
+        }
+      ],
+      "customerInputs": ["Retention purpose", "Region", "Legal-hold policy"]
+    },
+    {
+      "controlId": "AIA-ART14-HUMAN-OVERSIGHT",
+      "articleRefs": ["Article 14"],
+      "title": "Effective human oversight",
+      "description": "Competent operators can understand, intervene, stop and review the system through enforced approval and suspension controls.",
+      "applicability": "high_risk",
+      "enforcement": "hybrid",
+      "blocksProduction": true,
+      "evidenceKinds": ["oversight_plan", "approval", "training_record", "stop_test"],
+      "responsibilities": [
+        {
+          "party": "argus_platform",
+          "responsibility": "Provide enforceable approval, stop, replay-protection and audit mechanisms.",
+          "required": true
+        },
+        {
+          "party": "deployer",
+          "responsibility": "Assign competent operators and operate the oversight process.",
+          "required": true
+        }
+      ],
+      "customerInputs": ["Oversight roles", "Escalation path", "Training evidence"]
+    },
+    {
+      "controlId": "AIA-ART15-ROBUSTNESS-SECURITY",
+      "articleRefs": ["Article 15"],
+      "title": "Accuracy, robustness and cybersecurity",
+      "description": "Version-specific evaluation and security thresholds gate release and substantial changes.",
+      "applicability": "high_risk",
+      "enforcement": "hybrid",
+      "blocksProduction": true,
+      "evidenceKinds": ["evaluation", "security_scan", "red_team_result", "release_gate"],
+      "responsibilities": [
+        {
+          "party": "argus_platform",
+          "responsibility": "Run and preserve reproducible evaluation and security gates.",
+          "required": true
+        },
+        {
+          "party": "provider",
+          "responsibility": "Define use-case thresholds and remediate failures.",
+          "required": true
+        }
+      ],
+      "customerInputs": ["Accuracy threshold", "Robustness scenarios", "Security acceptance"]
+    },
+    {
+      "controlId": "AIA-ART50-TRANSPARENCY",
+      "articleRefs": ["Article 50"],
+      "title": "AI interaction and generated-content transparency",
+      "description": "Applicable channels expose an accessible, versioned notice and preserve publication evidence.",
+      "applicability": "conditional",
+      "enforcement": "hybrid",
+      "blocksProduction": true,
+      "evidenceKinds": ["transparency_notice", "channel_configuration", "publication_event"],
+      "responsibilities": [
+        {
+          "party": "argus_platform",
+          "responsibility": "Render and audit configured notices and metadata.",
+          "required": true
+        },
+        {
+          "party": "deployer",
+          "responsibility": "Determine the publication context and provide approved language.",
+          "required": true
+        }
+      ],
+      "customerInputs": ["Channel", "Audience", "Approved notice text"]
+    },
+    {
+      "controlId": "AIA-ART72-POST-MARKET",
+      "articleRefs": ["Article 72"],
+      "title": "Post-market monitoring",
+      "description": "An active monitoring plan gathers and reviews performance, feedback, drift and compliance signals for the released system.",
+      "applicability": "high_risk",
+      "enforcement": "hybrid",
+      "blocksProduction": true,
+      "evidenceKinds": ["monitoring_plan", "metric", "drift_review", "corrective_action"],
+      "responsibilities": [
+        {
+          "party": "argus_platform",
+          "responsibility": "Collect bounded evidence, schedule reviews and surface drift.",
+          "required": true
+        },
+        {
+          "party": "provider",
+          "responsibility": "Own, review and act on the post-market monitoring plan.",
+          "required": true
+        }
+      ],
+      "customerInputs": ["Monitoring KPIs", "Thresholds", "Review cadence"]
+    },
+    {
+      "controlId": "AIA-ART73-SERIOUS-INCIDENTS",
+      "articleRefs": ["Article 73"],
+      "title": "Serious-incident handling",
+      "description": "Incidents preserve causality, deadlines, notifications and corrective-action evidence without making an automatic legal reporting decision.",
+      "applicability": "high_risk",
+      "enforcement": "hybrid",
+      "blocksProduction": false,
+      "evidenceKinds": ["incident", "causality_assessment", "notification", "corrective_action"],
+      "responsibilities": [
+        {
+          "party": "argus_platform",
+          "responsibility": "Provide a deadline-aware, immutable incident and CAPA workflow.",
+          "required": true
+        },
+        {
+          "party": "provider",
+          "responsibility": "Decide reportability and submit to the correct authority within the applicable deadline.",
+          "required": true
+        }
+      ],
+      "customerInputs": ["Regulatory contact", "Severity decision", "Notification reference"]
+    }
+  ]
+}

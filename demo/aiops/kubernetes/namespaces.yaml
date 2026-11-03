@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argus-aiops-system
+  labels:
+    app.kubernetes.io/part-of: argus-aiops
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argus-demo
+  labels:
+    app.kubernetes.io/part-of: argus-aiops
+    argus.aiops/observable: "true"
