@@ -94,6 +94,8 @@ services:
     image: node:20-alpine
     working_dir: /fixtures
     command: ["node", "fake-workspace.mjs"]
+    environment:
+      FAKE_WORKSPACE_TRACE: "1"
     volumes:
       - ./e2e/fixtures:/fixtures:ro
     healthcheck:
@@ -140,7 +142,7 @@ services:
       EMBEDDING_MODEL: e2e-embedding
       MEMORY_CONSOLIDATION_MODEL: e2e-chat
       LLM_REQUEST_TIMEOUT_MS: "10000"
-      SSRF_ALLOWLIST_HOSTS: fake-mcp
+      SSRF_ALLOWLIST_HOSTS: fake-mcp,fake-workspace
       RAG_RERANKER_PROVIDER: none
       AI_TRANSPARENCY_NOTICE_ENABLED: "true"
       ARGUS_AUDIT_EVIDENCE_V1_ENABLED: "true"
@@ -174,6 +176,10 @@ services:
       ARGUS_GOLDEN_PATH_NOTIFICATION_BUNDLE: argus_e2e_slack_fixture
       ARGUS_GOLDEN_PATH_NOTIFICATION_DESTINATION: argus-e2e-golden-path
       ARGUS_EXECUTION_GRANT_SECRET: argus-e2e-execution-grant-signing-secret-at-least-32-characters
+      # Argus Dev performs every Git read/write through the Core-owned broker
+      # with the run's execution grant; the synthetic Gitea runs on the
+      # private E2E network, so it is the only additional SSRF exception.
+      ARGUS_DEV_GIT_BROKER_ENABLED: "true"
       GITEA_CI_WEBHOOK_SECRET: argus-e2e-ci-webhook-secret
       GITHUB_CI_WEBHOOK_SECRET: argus-e2e-github-ci-webhook-secret
       GITLAB_CI_WEBHOOK_SECRET: argus-e2e-gitlab-ci-webhook-secret

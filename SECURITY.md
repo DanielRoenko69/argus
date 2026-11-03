@@ -64,6 +64,14 @@ These are tracked and not yet resolved:
   in plaintext until the connection is saved again.
 - Legacy compliance PDF/CSV exports record their audit entry best-effort
   rather than fail-closed.
+- Solution Pack task history stores the submitted A2A message verbatim. Undeclared
+  input fields are rejected, but their values are not redacted from the stored
+  history, so never put credentials into run input.
+- The Argus Dev CI failure recovery pushes its reviewed fix through the Core Git
+  broker but cannot request a provider CI rerun through the broker yet; the run
+  then fails closed instead of using stored provider credentials.
+- The Core Git broker is disabled by default (`ARGUS_DEV_GIT_BROKER_ENABLED=false`);
+  Argus Dev coding runs need it enabled to clone and deliver.
 
 ## Demo and test credentials
 

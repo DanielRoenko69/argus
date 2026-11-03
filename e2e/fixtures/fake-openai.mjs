@@ -75,6 +75,35 @@ function scenario(messages) {
   const toolContent = contentOf(lastTool);
   const system = messages.filter(message => message.role === 'system').map(contentOf).join('\n');
 
+  // Argus Dev coder worker: Core enforces workspace_ls -> workspace_read ->
+  // workspace_write before a terminal structured outcome. Corrections are
+  // appended as user turns, so match the original implementation prompt.
+  const coderPrompt = messages.find(message => message.role === 'user'
+    && (contentOf(message).includes('You are a software implementation agent.')
+      || contentOf(message).includes('You are the implementation agent fixing a failed CI run.')));
+  if (coderPrompt) {
+    const promptText = contentOf(coderPrompt);
+    const ciFix = promptText.includes('fixing a failed CI run');
+    const workspaceDir = ciFix
+      ? `/workspace/${/Branch: feature\/([A-Za-z0-9-]+)/.exec(promptText)?.[1] ?? 'untitled'}`
+      : /Workspace directory: (\/workspace\/[^\s(]+)/.exec(promptText)?.[1] ?? '/workspace';
+    const target = `${workspaceDir}/src/argus-e2e.ts`;
+    const calls = messages.filter(message => message.role === 'assistant' && Array.isArray(message.tool_calls)
+      && message.tool_calls.length > 0).length;
+    if (calls === 0) return { tool: 'workspace_ls', arguments: { path: workspaceDir } };
+    if (calls === 1) return { tool: 'workspace_read', arguments: { path: target } };
+    if (calls === 2) return { tool: 'workspace_write', arguments: { path: target, content: 'ARGUS_E2E_LANGGRAPH_CHANGE\n' } };
+    if (ciFix) return { content: 'Applied the deterministic fix to src/argus-e2e.ts.\nFIX_VERDICT: APPLIED' };
+    return {
+      content: JSON.stringify({
+        version: 2,
+        status: 'ready',
+        summary: 'Updated src/argus-e2e.ts with the deterministic ARGUS_E2E_LANGGRAPH_CHANGE marker.',
+        blockers: [],
+      }),
+    };
+  }
+
   if (lastUser.includes('compliance-audit-auftrag')) {
     if (!lastTool) return { tool: 'e2e_fabric_fabric_status', arguments: {} };
     return {
@@ -98,6 +127,31 @@ function scenario(messages) {
           remediation: 'Record the responsible reviewer and the final applicability decision in the evidence pack.',
         },
       ]),
+    };
+  }
+
+  // Argus Dev development contract v2 (planner and other bounded agents):
+  // a ready outcome without blockers.
+  if (rawLastUser.includes('Return only JSON: {"version":2,"status":"ready"|"blocked"')) {
+    return {
+      content: JSON.stringify({
+        version: 2,
+        status: 'ready',
+        summary: '1. Update src/argus-e2e.ts with the deterministic ARGUS_E2E_LANGGRAPH_CHANGE marker.\n2. Run the ticket-specific checks.',
+        blockers: [],
+      }),
+    };
+  }
+
+  // Argus Dev structured code review.
+  if (rawLastUser.includes('{"verdict":"APPROVE|REQUEST_CHANGES"')) {
+    return {
+      content: JSON.stringify({
+        verdict: 'APPROVE',
+        summary: 'The deterministic implementation matches the plan and the ticket-specific tests pass. No release-blocking concerns were found.',
+        findings: [{ severity: 'info', message: 'Deterministic LangGraph E2E change reviewed successfully.', file: 'src/argus-e2e.ts', line: 1 }],
+        required_changes: [],
+      }),
     };
   }
 

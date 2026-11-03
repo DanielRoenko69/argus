@@ -39,6 +39,13 @@ test('OIDC state created on replica A is consumed on B and rejects replay', asyn
   const captured = new URL(callbackCaptureUrl);
   const callbackOnB = new URL(`${secondary}/auth/oidc/callback`);
   callbackOnB.search = captured.search;
+  // The callback is bound to the browser that started the login. Real replicas
+  // share one public hostname; these fixtures use two, so carry the binding
+  // cookie from A to B as the shared hostname would.
+  const binding = (await context.cookies()).find(cookie => cookie.name === 'argus_oidc_binding'
+    && cookie.domain === new URL(primary).hostname);
+  expect(binding).toBeTruthy();
+  await context.addCookies([{ ...binding!, domain: new URL(secondary).hostname }]);
   await page.goto(callbackOnB.toString());
   await expect(page).toHaveURL(`${secondary}/home`);
   const me = await page.evaluate(async () => {

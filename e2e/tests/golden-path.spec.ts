@@ -1693,21 +1693,48 @@ test('fresh Argus install certifies auth, LLM, agent, public widget, RAG, connec
   expect(rejectedGoldenRun.stages.find(stage => stage.id === 'external_action')?.state).toBe('skipped');
   expect(rejectedGoldenRun.outcomes.every(outcome => outcome.state === 'skipped')).toBe(true);
 
-  const telemetrySecret = 'ARGUS_E2E_TRACE_SECRET_DO_NOT_STORE';
-  const codingRun = await expectApi<{ thread_id: string; workflow_type: string }>(admin, '/api/coding/threads', 200, {
-    method: 'POST',
-    body: {
-      workflow_type: 'coding_workflow',
-      input: {
-        ticket_id: 'ARGUS-E2E-LG-1',
-        description: 'Exercise the real LangGraph coding workflow and pause for human code approval.',
-        apiToken: telemetrySecret,
-        argus_bundle_id: gitBundle!.id,
-      },
-    },
+  // Coding runs start through the governed Solution Pack boundary: Core issues
+  // a workspace-bound execution grant, and Argus Dev performs every Git
+  // operation through the Core broker with that grant. Undeclared input such
+  // as a credential-shaped field is rejected before any workspace is touched.
+  type CodingA2aStart = {
+    rootTraceId: string;
+    task: {
+      id: string;
+      status: { state: string };
+      metadata: { workflowThreadId?: string; executionGrantId?: string; executionBundleIds?: number[] };
+    };
+  };
+  const codingStartPath = '/api/admin/solution-packs/argus.dev/agents/coding-orchestrator/a2a/message';
+  const codingStartBody = (input: Record<string, unknown>) => ({
+    text: 'Start ticket-to-pull-request through the governed argus.dev runtime.',
+    data: { operation: 'workflow.start', workflowId: 'ticket-to-pull-request', input },
+    execution: { bundleIds: [gitBundle!.id] },
   });
-  expect(codingRun.workflow_type).toBe('coding_workflow');
-  expect(codingRun.thread_id).toBeTruthy();
+  const codingInput = {
+    ticket_id: 'ARGUS-E2E-LG-1',
+    description: 'Exercise the real LangGraph coding workflow and pause for human code approval.',
+    ci_provider: 'gitea',
+  };
+  const telemetrySecret = 'ARGUS_E2E_TRACE_SECRET_DO_NOT_STORE';
+  const rejectedCodingStart = await expectApi<CodingA2aStart>(admin, codingStartPath, 200, {
+    method: 'POST',
+    body: codingStartBody({ ...codingInput, ticket_id: 'ARGUS-E2E-LG-REJECTED', apiToken: telemetrySecret }),
+  });
+  expect(rejectedCodingStart.task.status.state).toBe('TASK_STATE_FAILED');
+  expect(rejectedCodingStart.task.metadata.workflowThreadId).toBeUndefined();
+
+  const codingStart = await expectApi<CodingA2aStart>(admin, codingStartPath, 200, {
+    method: 'POST',
+    body: codingStartBody(codingInput),
+  });
+  expect(codingStart.task.status.state).toBe('TASK_STATE_WORKING');
+  expect(codingStart.task.metadata).toMatchObject({
+    workflowThreadId: codingStart.rootTraceId,
+    executionGrantId: expect.stringMatching(/^[0-9a-f-]{36}$/),
+    executionBundleIds: [gitBundle!.id],
+  });
+  const codingRun = { thread_id: codingStart.task.metadata.workflowThreadId! };
 
   type CodingState = {
     status?: string;
@@ -2077,7 +2104,6 @@ test('fresh Argus install certifies auth, LLM, agent, public widget, RAG, connec
     kind: 'workflow',
     status: 'completed',
   });
-  expect(codingTrace.trace.input_preview).toMatchObject({ apiToken: '[REDACTED]' });
   expect(JSON.stringify(codingTrace)).not.toContain(telemetrySecret);
   expect(codingTrace.family.rootTraceId).toBe(codingRun.thread_id);
   const childAgentRuns = codingTrace.family.runs.filter(run => run.kind === 'agent');
@@ -2144,7 +2170,8 @@ test('fresh Argus install certifies auth, LLM, agent, public widget, RAG, connec
     expect.objectContaining({
       id: codingRun.thread_id,
       kind: 'workflow',
-      href: `/runs/workflow/${codingRun.thread_id}`,
+      // Governed Pack runs open in their Solution workspace, keyed by A2A task.
+      href: `/solutions/argus.dev?task=${codingStart.task.id}`,
     }),
   ]));
   const langGraphRunDetail = await expectApi<{
@@ -2170,13 +2197,12 @@ test('fresh Argus install certifies auth, LLM, agent, public widget, RAG, connec
   expect(langGraphRunDetail.traceFamily.rootTraceId).toBe(codingRun.thread_id);
 
   await admin.goto('/observe');
-  const langGraphRunLink = admin.locator(`a[href="/runs/workflow/${codingRun.thread_id}"]`).first();
-  await expect(langGraphRunLink).toBeVisible();
-  await langGraphRunLink.click();
-  await expect(admin).toHaveURL(new RegExp(`/runs/workflow/${codingRun.thread_id}$`));
+  await expect(admin.locator(`a[href="/solutions/argus.dev?task=${codingStart.task.id}"]`).first()).toBeVisible();
+  // The distributed trace of the same run stays addressable by its thread id.
+  await admin.goto(`/runs/workflow/${codingRun.thread_id}`);
   await expect(admin.getByRole('heading', { name: 'Distributed trace' })).toBeVisible();
-  await expect(admin.getByLabel('Runtime trace summary')).toContainText('Argus LangGraph');
-  await expect(admin.getByLabel('Runtime trace summary')).toContainText('Approval gates');
+  await expect(admin.getByLabel('Runtime trace summary')).toContainText('Agents');
+  await expect(admin.getByLabel('Runtime trace summary')).toContainText('Approval gates2');
   const approvalMarker = admin.getByRole('button', { name: /Code Approval/ });
   await expect(approvalMarker).toBeVisible();
   await approvalMarker.click();

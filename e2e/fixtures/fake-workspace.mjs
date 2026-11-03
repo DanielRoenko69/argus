@@ -6,6 +6,24 @@ const files = new Map([
   ['/workspace/ARGUS-E2E-LG-1/src/argus-e2e.ts', 'old\n'],
 ]);
 
+// Repositories cloned through Core's Git broker (POST /git/remote), keyed by
+// the grant-bound workspace root. Commits advance a deterministic 40-hex head.
+const BASE_SHA = 'a'.repeat(40);
+const repositories = new Map();
+
+function repositoryFor(cwd) {
+  const dir = String(cwd || '').replace(/\/+$/, '');
+  for (const [root, repository] of repositories) {
+    if (dir === root || dir.startsWith(`${root}/`)) return repository;
+  }
+  return undefined;
+}
+
+function nextSha(previous) {
+  const digit = ((parseInt(previous[0], 16) + 1) % 16).toString(16);
+  return digit.repeat(40);
+}
+
 function json(res, status, value) {
   const body = JSON.stringify(value);
   res.writeHead(status, {
@@ -22,7 +40,24 @@ async function readJson(req) {
   return raw ? JSON.parse(raw) : {};
 }
 
-function execResult(command) {
+function execResult(command, cwd) {
+  const gitDir = /^test -d "([^"]+)\/\.git"/.exec(command);
+  if (gitDir) {
+    return { stdout: repositoryFor(gitDir[1]) ? 'OK\n' : 'NO\n', stderr: '', exit_code: 0 };
+  }
+  const repository = repositoryFor(cwd);
+  if (command.startsWith('git remote get-url origin')) {
+    return repository
+      ? { stdout: `${repository.url}\n`, stderr: '', exit_code: 0 }
+      : { stdout: '', stderr: 'fatal: not a git repository\n', exit_code: 128 };
+  }
+  if (repository && command === 'git rev-parse HEAD') {
+    return { stdout: `${repository.head}\n`, stderr: '', exit_code: 0 };
+  }
+  if (repository && /(^|&&\s*|;\s*)git commit\b/.test(command)) {
+    repository.head = nextSha(repository.head);
+    return { stdout: `[${repository.branch} ${repository.head.slice(0, 7)}] Argus E2E change\n`, stderr: '', exit_code: 0 };
+  }
   if (command.includes('[ -f package.json ]') || command.includes('printf node')) {
     return { stdout: 'node\n', stderr: '', exit_code: 0 };
   }
@@ -42,8 +77,10 @@ function execResult(command) {
       exit_code: 0,
     };
   }
-  if (command === 'git status --porcelain') {
-    const changed = [...files.values()].some(content => content !== 'old\n');
+  if (command.startsWith('git status --porcelain')) {
+    const root = repository ? [...repositories.entries()].find(([, value]) => value === repository)?.[0] : undefined;
+    const changed = [...files.entries()].some(([path, content]) => content !== 'old\n'
+      && (!root || path.startsWith(`${root}/`)));
     return { stdout: changed ? ' M src/argus-e2e.ts\n' : '', stderr: '', exit_code: 0 };
   }
   if (command.includes('test -d')) {
@@ -63,6 +100,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && /^\/api\/v1\/repos\/[^/]+\/[^/]+\/pulls$/.test(path)) {
       return json(res, 201, {
         id: 42,
+        number: 42,
         html_url: 'http://fake-workspace:4200/argus-e2e/argus-e2e-repo/pulls/42',
         url: 'http://fake-workspace:4200/api/v1/repos/argus-e2e/argus-e2e-repo/pulls/42',
       });
@@ -103,9 +141,30 @@ const server = http.createServer(async (req, res) => {
       files.set(filePath, content);
       return json(res, 200, { path: filePath, size_bytes: Buffer.byteLength(content) });
     }
+    // Core Git broker transport: clone/fetch/push/verify against the
+    // grant-bound workspace root. Receipts carry a 40-hex commit like the
+    // real agent-workspace; credentials in `authorization` are ignored.
+    if (req.method === 'POST' && path === '/git/remote') {
+      const body = await readJson(req);
+      const root = String(body.workspaceRoot || '').replace(/\/+$/, '');
+      if (!root.startsWith('/workspace/')) return json(res, 400, { error: 'workspace root required' });
+      if (body.operation === 'clone') {
+        repositories.set(root, { url: String(body.url || ''), branch: String(body.branch || 'master'), head: BASE_SHA });
+      }
+      const repository = repositories.get(root);
+      if (!repository) return json(res, 200, { ok: false });
+      if (body.operation === 'push') {
+        return json(res, 200, { ok: body.commitSha === repository.head, commitSha: repository.head });
+      }
+      return json(res, 200, { ok: true, commitSha: repository.head });
+    }
     if (req.method !== 'POST' || path !== '/exec') return json(res, 404, { error: 'not found' });
     const body = await readJson(req);
-    return json(res, 200, execResult(String(body.cmd || '')));
+    const result = execResult(String(body.cmd || ''), String(body.cwd || ''));
+    if (process.env.FAKE_WORKSPACE_TRACE === '1') {
+      process.stdout.write(`exec ${body.cwd || ''} :: ${String(body.cmd || '').slice(0, 200).replace(/\s+/g, ' ')} -> ${result.exit_code}\n`);
+    }
+    return json(res, 200, result);
   } catch (error) {
     return json(res, 500, { error: error instanceof Error ? error.message : String(error) });
   }

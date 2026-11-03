@@ -254,24 +254,37 @@ test('prepare persisted native and LangGraph checkpoints before Argus restart', 
   // id is encoded in the URL and must survive the fix and approval stages.
   const recoveryBundleId = codingRun.task.metadata.executionBundleIds?.[0] ?? 0;
   expect(recoveryBundleId).toBeGreaterThan(0);
-  const recoveryRun = await expectApi<{ thread_id: string; workflow_type: string }>(page, '/api/coding/threads', 200, {
-    method: 'POST',
-    body: {
-      workflow_type: 'ci_failure_recovery',
-      input: {
-        ticket_id: 'ARGUS-E2E-RECOVERY-1',
-        repository: 'argus-e2e/argus-e2e-repo',
-        branch_name: 'feature/ARGUS-E2E-RECOVERY-1',
-        commit_sha: 'argus-e2e-recovery-sha',
-        ci_provider: 'gitea',
-        ci_workflow: 'Argus E2E Recovery CI',
-        ci_run_url: 'http://fake-workspace:4200/argus-e2e/argus-e2e-repo/actions/runs/41',
-        ci_failure_context: 'Argus E2E fixture: deterministic assertion failed in the provider test job.',
-        argus_bundle_id: recoveryBundleId,
+  // Like every Argus Dev run, recovery starts through the governed Pack
+  // boundary so Core binds the workspace and Git broker to its own grant.
+  const recoveryStart = await expectApi<{ rootTraceId: string; task: CodingA2aTask }>(
+    page,
+    '/api/admin/solution-packs/argus.dev/agents/coding-orchestrator/a2a/message',
+    200,
+    {
+      method: 'POST',
+      body: {
+        text: 'Start ci-failure-recovery through the governed argus.dev runtime.',
+        data: {
+          operation: 'workflow.start',
+          workflowId: 'ci-failure-recovery',
+          input: {
+            ticket_id: 'ARGUS-E2E-RECOVERY-1',
+            repository: 'argus-e2e/argus-e2e-repo',
+            branch_name: 'feature/ARGUS-E2E-RECOVERY-1',
+            commit_sha: 'argus-e2e-recovery-sha',
+            ci_provider: 'gitea',
+            ci_workflow: 'Argus E2E Recovery CI',
+            ci_run_url: 'http://fake-workspace:4200/argus-e2e/argus-e2e-repo/actions/runs/41',
+            ci_failure_context: 'Argus E2E fixture: deterministic assertion failed in the provider test job.',
+          },
+        },
+        execution: { bundleIds: [recoveryBundleId] },
       },
     },
-  });
-  expect(recoveryRun.workflow_type).toBe('ci_failure_recovery');
+  );
+  expect(recoveryStart.task.status.state).toBe('TASK_STATE_WORKING');
+  const recoveryRun = { thread_id: recoveryStart.task.metadata.workflowThreadId! };
+  expect(recoveryRun.thread_id).toBe(recoveryStart.rootTraceId);
   const recoveryCheckpoint = await pollApi<CodingState>(
     page,
     `/api/coding/threads/${recoveryRun.thread_id}`,
@@ -589,7 +602,7 @@ test('resume native and retain LangGraph checkpoint after Argus restart', async 
   await expect(page).toHaveURL(new RegExp(`/solutions/argus\\.dev\\?task=${state.codingA2aTaskId}$`));
   const restartRunDialog = page.getByRole('dialog', { name: 'Argus Dev run ARGUS-E2E-RESTART-1' });
   await expect(restartRunDialog).toBeVisible();
-  await expect(restartRunDialog.getByText(/approval required/i)).toBeVisible();
+  await expect(restartRunDialog.getByRole('heading', { name: /human approval required/i })).toBeVisible();
 
   const governance = await pollApi<{
     approvals: Array<{ runtimeApprovalId?: number; workflowExecutionId?: number }>;
@@ -607,7 +620,9 @@ test('resume native and retain LangGraph checkpoint after Argus restart', async 
   expect(resumedNative.step_results.response?.status).toBe('completed');
 
   // The CI recovery approval was persisted before the Argus restart. Resume
-  // it now and assert that the real Gitea rerun endpoint returns run 142.
+  // it now: the reviewed fix is pushed through the Core Git broker, and the
+  // provider rerun, which the broker does not support yet, fails closed
+  // without falling back to stored provider credentials.
   const recoveryCheckpoint = await expectApi<CodingState>(
     page,
     `/api/coding/threads/${state.ciRecoveryThreadId}`,
@@ -618,17 +633,20 @@ test('resume native and retain LangGraph checkpoint after Argus restart', async 
     method: 'POST',
     body: { approved: true, rationale: 'Recovery fix approved after Argus control-plane restart.' },
   });
-  const recoveryWaiting = await pollApi<CodingState>(
+  const recoveryPushed = await pollApi<CodingState>(
     page,
     `/api/coding/threads/${state.ciRecoveryThreadId}`,
-    body => body.status === 'interrupted'
-      && body.values?.delivery_status === 'awaiting_ci'
-      && body.values?.ci_run?.status === 'queued'
-      && body.values?.ci_run?.external_id === '142'
-      && body.values?.log?.some(entry => entry.step === 'external_ci_retry' && entry.summary.includes('retry queued')) === true,
+    body => body.status === 'failed'
+      && body.values?.ci_run?.conclusion === 'retry_trigger_failed'
+      && body.values?.log?.some(entry => entry.step === 'external_ci_retry'
+        && entry.summary.includes('not yet supported by the Core Git broker')) === true,
     60_000,
   );
-  expect(recoveryWaiting.values?.ci_run).toMatchObject({ provider: 'gitea', external_id: '142', status: 'queued' });
+  expect(recoveryPushed.values?.log?.map(entry => entry.step)).toEqual(expect.arrayContaining([
+    'ci_recovery_tests', 'ci_recovery_review', 'ci_recovery_approval', 'finalize_build',
+  ]));
+  expect(recoveryPushed.values?.log?.find(entry => entry.step === 'finalize_build')?.summary).toContain('pushed feature/ARGUS-E2E-RECOVERY-1');
+  expect(recoveryPushed.values?.delivery_status).toBe('ci_failed');
 
   await context.close();
 });
@@ -642,45 +660,17 @@ test('resume LangGraph checkpoint after LangGraph runtime restart', async ({ bro
   if (page.url().endsWith('/login')) await login(page);
   await expect(page).toHaveURL(/\/home$/);
 
+  // The fail-closed recovery outcome is durable across the runtime restart.
   const persistedRecovery = await expectApi<CodingState>(
     page,
     `/api/coding/threads/${state.ciRecoveryThreadId}`,
     200,
   );
-  expect(persistedRecovery.status).toBe('interrupted');
+  expect(persistedRecovery.status).toBe('failed');
   expect(persistedRecovery.values).toMatchObject({
-    delivery_status: 'awaiting_ci',
-    ci_run: expect.objectContaining({ provider: 'gitea', external_id: '142', status: 'queued' }),
+    delivery_status: 'ci_failed',
+    ci_run: expect.objectContaining({ provider: 'gitea', conclusion: 'retry_trigger_failed' }),
   });
-  const recoveryCiPayload = {
-    workflow_run: {
-      id: 142,
-      name: 'Argus E2E Recovery CI',
-      status: 'completed',
-      conclusion: 'success',
-      head_branch: 'feature/ARGUS-E2E-RECOVERY-1',
-      head_sha: 'abcdef1234567890',
-      html_url: 'http://fake-workspace:4200/argus-e2e/argus-e2e-repo/actions/runs/142',
-    },
-    repository: { full_name: 'argus-e2e/argus-e2e-repo' },
-  };
-  const recoveryCiRawBody = JSON.stringify(recoveryCiPayload);
-  const recoveryCiSignature = createHmac('sha256', 'argus-e2e-ci-webhook-secret').update(recoveryCiRawBody).digest('hex');
-  const recoveryCiCallback = await request.post('/api/coding/webhook/ci/gitea', {
-    headers: { 'content-type': 'application/json', 'x-gitea-event': 'workflow_run', 'x-gitea-signature': recoveryCiSignature },
-    data: recoveryCiPayload,
-  });
-  expect(recoveryCiCallback.status(), await recoveryCiCallback.text()).toBe(200);
-  const recovered = await pollApi<CodingState>(
-    page,
-    `/api/coding/threads/${state.ciRecoveryThreadId}`,
-    body => body.status === 'completed'
-      && body.values?.delivery_status === 'ci_passed'
-      && body.values?.ci_recovery_completed === true
-      && body.values?.log?.some(entry => entry.step === 'ci_recovery_complete') === true,
-    60_000,
-  );
-  expect(recovered.values?.ci_run).toMatchObject({ provider: 'gitea', external_id: '142', status: 'success', conclusion: 'success' });
 
   const persistedCheckpoint = await expectApi<CodingState>(
     page,

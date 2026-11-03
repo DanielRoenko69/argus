@@ -27,7 +27,7 @@ docker compose version
 ## Install
 
 ```bash
-git clone <this repository> argus
+git clone https://github.com/DanielRoenko69/argus.git argus
 cd argus
 docker compose -f compose.install.yml run --rm --build install            # optimal (default)
 docker compose -f compose.install.yml run --rm --build install minimal    # Core only

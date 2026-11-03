@@ -90,7 +90,7 @@ You need **Docker** (Desktop or Engine, Compose v2) and **Git**. One command
 builds and starts Core, the Agent Workspace and all three Solution Packs:
 
 ```bash
-git clone (https://github.com/DanielRoenko69/argus.git argus
+git clone https://github.com/DanielRoenko69/argus.git argus
 cd argus
 docker compose -f compose.install.yml run --rm --build install
 ```
