@@ -46,7 +46,7 @@ services:
     # Keep the external debug port distinct from the legacy in-repo runtime
     # while both containers may still exist during the repository migration.
     ports:
-      - "${ARGUS_DEV_PORT:-2026}:2025"
+      - "127.0.0.1:${ARGUS_DEV_PORT:-2026}:2025"
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 2025
@@ -109,7 +109,7 @@ services:
   argus-aiops:
     image: ${ARGUS_AIOPS_IMAGE:-argus-aiops:local}
     ports:
-      - "${ARGUS_AIOPS_PORT:-2030}:2030"
+      - "127.0.0.1:${ARGUS_AIOPS_PORT:-2030}:2030"
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 2030

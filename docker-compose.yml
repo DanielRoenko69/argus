@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-aiops}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
       - pgdata:/var/lib/postgresql/data
@@ -501,7 +501,7 @@ services:
       context: ./packs/argus-dev
       dockerfile: Dockerfile
     ports:
-      - "${LANGGRAPH_PORT:-2025}:2025"
+      - "127.0.0.1:${LANGGRAPH_PORT:-2025}:2025"
     environment:
       ARGUS_URL: "http://mcp-server:3000"
       ARGUS_API_KEY: ${MCP_API_KEYS:?MCP_API_KEYS required}
@@ -580,7 +580,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     command: ["sh", "-c", "exec redis-server $${REDIS_PASSWORD:+--requirepass $$REDIS_PASSWORD} --save 60 1 --loglevel warning"]
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     volumes:
       - redisdata:/data
     healthcheck:

@@ -177,5 +177,10 @@ state. Only use it when you really want a clean slate.
   credential volumes.
 - Set `NODE_ENV=production`, terminate TLS in front of Argus and use strong,
   unique secrets for any shared or internet-reachable deployment.
+- Only the Console/API port (`PORT`, default 3000) listens on all network
+  interfaces. PostgreSQL, Redis, LangGraph and the Solution Pack ports are
+  bound to `127.0.0.1`. With `NODE_ENV=production` the session and sign-in
+  cookies are `Secure`, so serve Argus over HTTPS whenever people reach it by
+  any name other than `localhost`.
 - See [SECURITY.md](../SECURITY.md) for the security model, known limitations
   and how to report vulnerabilities.
