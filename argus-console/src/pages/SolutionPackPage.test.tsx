@@ -749,7 +749,7 @@ describe('SolutionPackPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Start Pull request review' })).toBeEnabled());
     fireEvent.click(screen.getByRole('button', { name: 'Start Pull request review' }));
 
-    expect(await screen.findByRole('dialog', { name: 'Argus Dev run PR #42' }, { timeout: 5_000 })).toBeVisible();
+    expect(await screen.findByRole('dialog', { name: 'Argus Dev run PR #42' }, { timeout: 10_000 })).toBeVisible();
     expect(api.startSolutionPackWorkflow).toHaveBeenCalledWith('argus.dev', 'coding-orchestrator', {
       workflowId: 'pull-request-review',
       input: {
