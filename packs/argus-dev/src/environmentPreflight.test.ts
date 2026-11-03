@@ -19,9 +19,12 @@ test('initial and repair recipes, including reusable workspace policy, receive t
 // macOS has no GNU timeout by default. The offline Linux certificate exercises
 // the real timeout binary and installed controller; here only its CLI is stubbed.
 const timeoutStub = `timeout() { test "$1" = --kill-after=2s; test "$2" = 20s; shift 2; "$@"; }`;
+// stdin must not be Node's socketpair: Debian/Ubuntu bash treats a socket on
+// stdin as a remote shell and sources /etc/bash.bashrc, which breaks under -u.
 function shell(start: string) {
   const r = spawnSync('bash', ['-euo', 'pipefail', '-c', timeoutStub + '\n' + ENVIRONMENT_PREFLIGHT_SHELL + '\n' + start
-    + '\nprintf "TESTS_STARTED\\n"'], { encoding: 'utf8', timeout: 5000, env: { PATH: process.env.PATH, LC_ALL: 'C' } });
+    + '\nprintf "TESTS_STARTED\\n"'], { encoding: 'utf8', timeout: 5000, env: { PATH: process.env.PATH, LC_ALL: 'C' },
+    stdio: ['ignore', 'pipe', 'pipe'] });
   assert.equal(r.error, undefined);
   return r;
 }
