@@ -239,6 +239,40 @@ jobs:
       - name: Test
         run: npm test
 
+  dependency-audit:
+    name: Dependency audit gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every committed npm lockfile. argus-chat-ui keeps its stricter gate above.
+        path:
+          - .
+          - agent-workspace
+          - argus-console
+          - workflow-builder
+          - packs/argus-dev
+          - packs/argus-aiops
+          - packs/argus-hermes
+          - e2e
+          - demo/argus-dev-sample
+          - demo/aiops/kubernetes/remediation-connector
+    defaults:
+      run:
+        working-directory: ${{ matrix.path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # Reads only the lockfile; nothing is installed or executed.
+      # Raise to high once the remaining zod 3 and OpenTelemetry SDK 1 advisories are migrated.
+      - name: Fail on critical advisories in the lockfile
+        run: npm audit --package-lock-only --audit-level=critical
+
   security-reports:
     name: Security and supply-chain reports (advisory)
     runs-on: ubuntu-latest

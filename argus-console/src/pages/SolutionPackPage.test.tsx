@@ -745,7 +745,10 @@ describe('SolutionPackPage', () => {
     fireEvent.change(screen.getByLabelText(/Pull request number/), { target: { value: '42' } });
     fireEvent.change(screen.getByLabelText(/Review goal/), { target: { value: 'Validate security and release readiness.' } });
     await waitFor(() => expect(screen.getByLabelText(/Development workspace/)).toBeChecked());
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Start Pull request review' })).toBeEnabled());
+    // Start stays locked until the debounced preflight has checked this repository.
+    await waitFor(() => expect(api.runSolutionPackPreflight).toHaveBeenCalledWith(
+      'argus.dev', 'coding-orchestrator', expect.objectContaining({ repository: 'argus/core' }),
+    ));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Start Pull request review' })).toBeEnabled());
     fireEvent.click(screen.getByRole('button', { name: 'Start Pull request review' }));
 

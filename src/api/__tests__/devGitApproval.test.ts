@@ -3,8 +3,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { signExecutionGrant, type ExecutionGrantClaims } from '../../solutionPacks/executionGrant.js';
 import { canonicalAuditDigest, redactCanonicalAuditPayload } from '../../audit/canonicalAuditRedaction.js';
 
-const audit=jest.fn<any>();
-const feedback=jest.fn<any>().mockResolvedValue(undefined);
+const audit=jest.fn<(...args: any[]) => any>();
+const feedback=jest.fn<(...args: any[]) => any>().mockResolvedValue(undefined);
 jest.mock('../../audit/canonicalAuditStore.js',()=>({executeCanonicalAuditedMutation:(...args:unknown[])=>audit(...args)}));
 jest.mock('../../observability/feedbackStore.js',()=>({submitHumanFeedback:(...args:unknown[])=>feedback(...args)}));
 import { createDevGitApprovalRouter } from '../devGitApproval.js';
@@ -17,18 +17,18 @@ function fixture(options:{userId?:number;revoked?:boolean;denied?:boolean;auditF
     iat:Math.floor(Date.now()/1000)-7200,exp:Math.floor(Date.now()/1000)-3600};
   const context={broker:true,threadId:id,checkpointId:checkpoint,stage:options.stage??'human_approval',executionGrant:signExecutionGrant(secret,claims),
     principal:'user:3',grantId:claims.jti,ticketId:'DEMO',branch:'feature/DEMO',commitSha:'a'.repeat(40),retryCount:2};
-  const fetchFn=jest.fn<any>().mockImplementation(async(_url:string,init:RequestInit)=>new Response(JSON.stringify(init.method==='GET'?context:{run_id:'new'})));
+  const fetchFn=jest.fn<(...args: any[]) => any>().mockImplementation(async(_url:string,init:RequestInit)=>new Response(JSON.stringify(init.method==='GET'?context:{run_id:'new'})));
   const recoveryDigest=createHash('sha256').update(JSON.stringify([checkpoint,true,'reviewed','reviewed'])).digest('hex');
   const recoveryAfter={decisionSha256:recoveryDigest,gate:'code_approval',approved:true};
   const recoveryAfterDigest=canonicalAuditDigest(redactCanonicalAuditPayload(recoveryAfter));
-  const query=jest.fn<any>().mockImplementation(async(sql:string)=>({rows:sql.includes('SELECT status')?[{status:options.revoked?'revoked':'active'}]
+  const query=jest.fn<(...args: any[]) => any>().mockImplementation(async(sql:string)=>({rows:sql.includes('SELECT status')?[{status:options.revoked?'revoked':'active'}]
     :sql.includes('SELECT approved,rationale,decision_feedback')&&options.recoveryRecorded
       ?[{approved:true,rationale:'reviewed',decision_feedback:'reviewed',row_hash:options.corruptRecovery?'bad':recoveryDigest,approver_user_id:3}]
     :sql.includes('FROM mcp_canonical_audit_events')&&options.recoveryRecorded
       ?[{actor_id:'3',resource_revision:checkpoint,payload_summary:{after:redactCanonicalAuditPayload(recoveryAfter)},after_digest:recoveryAfterDigest}]
     :sql.includes('mcp_users')?[{id:3,allowed_bundles:options.denied?[]:[50]}]:[]}));
-  const issuer={assertRepositoryCheckout:jest.fn<any>().mockResolvedValue(undefined),checkBundleCapabilities:jest.fn<any>().mockResolvedValue({ok:true}),
-    issueWithClaims:jest.fn<any>().mockResolvedValue({token:'fresh-private-grant',claims:{}})};
+  const issuer={assertRepositoryCheckout:jest.fn<(...args: any[]) => any>().mockResolvedValue(undefined),checkBundleCapabilities:jest.fn<(...args: any[]) => any>().mockResolvedValue({ok:true}),
+    issueWithClaims:jest.fn<(...args: any[]) => any>().mockResolvedValue({token:'fresh-private-grant',claims:{}})};
   audit.mockReset();audit.mockImplementation(async(_p:unknown,_producer:unknown,_scope:unknown,mutate:any)=>{
     if(options.auditFails)throw Error('audit failed');if(!options.replayed)await mutate({query});return{replayed:options.replayed??false};
   });

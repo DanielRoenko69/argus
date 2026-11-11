@@ -5,7 +5,7 @@ import { registerRepositoryIssueRoutes } from '../repositoryIssueRoutes.js';
 function fixture() {
   const routes = new Map<string, RequestHandler>();
   const app = { post: (path: string, ...handlers: RequestHandler[]) => routes.set(path, handlers.at(-1)!) } as unknown as Express;
-  const load = jest.fn<any>().mockResolvedValue({ sha256: 'a'.repeat(64), number: 5 });
+  const load = jest.fn<(...args: any[]) => any>().mockResolvedValue({ sha256: 'a'.repeat(64), number: 5 });
   const auth: RequestHandler = (_req, _res, next) => next();
   registerRepositoryIssueRoutes(app, {} as never, {} as never, auth, auth, load as never);
   const call = async (path: string, req: Record<string, unknown>) => {

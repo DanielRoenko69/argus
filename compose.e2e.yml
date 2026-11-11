@@ -238,7 +238,7 @@ services:
       start_period: 20s
 
   playwright:
-    image: mcr.microsoft.com/playwright:v1.55.0-noble
+    image: mcr.microsoft.com/playwright:v1.55.1-noble
     working_dir: /work/e2e
     init: true
     environment:

@@ -17,12 +17,12 @@ function fixture(options: { userId?: number; bundles?: number[]; revoked?: boole
     available: options.available ?? true, node: 'coder', checkpointId, workspaceDigest: options.drift ? 'b'.repeat(64) : workspaceDigest,
     ...(qa ? { reviewDigest: 'c'.repeat(64), sourceTraceId: randomUUID(), testPlan: 'validated QA', repairCount: 1 } : {}),
     ...(options.omission ? { retryKind: 'missing_reviews', missingDecisionIds: ['delivery_boundary'], receipt: { response: 'private original answer' } } : {}) };
-  const fetchFn = jest.fn<any>().mockImplementation(async (_url: string, init: RequestInit) => new Response(JSON.stringify(init.method === 'GET'
+  const fetchFn = jest.fn<(...args: any[]) => any>().mockImplementation(async (_url: string, init: RequestInit) => new Response(JSON.stringify(init.method === 'GET'
     ? context : { thread_id: id, run_id: randomUUID(), node: 'coder', status: 'queued' }), { status: 200 }));
-  const pool = { query: jest.fn<any>().mockImplementation(async (sql: string) => ({ rows: sql.includes('SELECT status')
+  const pool = { query: jest.fn<(...args: any[]) => any>().mockImplementation(async (sql: string) => ({ rows: sql.includes('SELECT status')
     ? [{ status: options.revoked ? 'revoked' : 'active' }] : options.auditFails ? [] : [{ id: 1 }] })) };
-  const issuer = { assertRepositoryCheckout: jest.fn<any>().mockResolvedValue(undefined), checkBundleCapabilities: jest.fn<any>().mockResolvedValue({ ok: true }),
-    issueWithClaims: jest.fn<any>().mockResolvedValue({ token: 'fresh-secret-token', claims: {} }) };
+  const issuer = { assertRepositoryCheckout: jest.fn<(...args: any[]) => any>().mockResolvedValue(undefined), checkBundleCapabilities: jest.fn<(...args: any[]) => any>().mockResolvedValue({ ok: true }),
+    issueWithClaims: jest.fn<(...args: any[]) => any>().mockResolvedValue({ token: 'fresh-secret-token', claims: {} }) };
   const router = createCodingCheckpointRetryRouter(pool as never, issuer as never, secret, fetchFn as never, options.qaRetry ? 'qa-retry' : qa ? 'qa-response-recheck' : 'checkpoint-retry');
   const call = async (method: 'get' | 'post', body: unknown = { checkpointId, workspaceDigest, ...(qa ? { reviewDigest: 'c'.repeat(64) } : {}) }) => {
     const route = router.stack[method === 'get' ? 0 : 1]!.route!;
