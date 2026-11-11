@@ -14,7 +14,7 @@ services:
   install:
     build:
       context: .
-      dockerfile: docker/installer.Dockerfile
+      dockerfile: deploy/installer/Dockerfile
     environment:
       ARGUS_INSTALLER_CORE_DIR: /workspace/argus-core
       ARGUS_INSTALLER_PARENT_DIR: /workspace

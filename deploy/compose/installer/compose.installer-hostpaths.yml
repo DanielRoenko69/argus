@@ -15,14 +15,14 @@ services:
   litellm:
     volumes:
       - type: bind
-        source: ${ARGUS_HOST_CORE_DIR:?ARGUS_HOST_CORE_DIR is set by the Docker installer}/litellm/config.yaml
+        source: ${ARGUS_HOST_CORE_DIR:?ARGUS_HOST_CORE_DIR is set by the Docker installer}/deploy/config/litellm.yaml
         target: /app/config.yaml
         read_only: true
 
   gitea-runner:
     volumes:
       - type: bind
-        source: ${ARGUS_HOST_CORE_DIR:?ARGUS_HOST_CORE_DIR is set by the Docker installer}/gitea/runner-config.yaml
+        source: ${ARGUS_HOST_CORE_DIR:?ARGUS_HOST_CORE_DIR is set by the Docker installer}/deploy/config/gitea-runner.yaml
         target: /config.yaml
         read_only: true
       - gitea-runner-data:/data

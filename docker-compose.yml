@@ -88,7 +88,7 @@ services:
     ports:
       - "127.0.0.1:${LITELLM_PORT:-4000}:4000"
     volumes:
-      - ./litellm/config.yaml:/app/config.yaml:ro
+      - ./deploy/config/litellm.yaml:/app/config.yaml:ro
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness')"]
       interval: 10s
@@ -157,7 +157,7 @@ services:
       GITEA_RUNNER_NAME: argus-local-runner
       GITEA_RUNNER_LABELS: ubuntu-latest:docker://node:20-bookworm
     volumes:
-      - ./gitea/runner-config.yaml:/config.yaml:ro
+      - ./deploy/config/gitea-runner.yaml:/config.yaml:ro
       - gitea-runner-data:/data
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
