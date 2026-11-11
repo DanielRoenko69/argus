@@ -16,8 +16,8 @@ function fixture() {
     resultSourceSha256: 'f'.repeat(64), applied: true,
     outputs: [{ path: 'client.ts', beforeSha256: null, sha256: '1'.repeat(64) }], finishedAt: new Date().toISOString() };
   const order: string[] = [];
-  const auditFn = jest.fn<any>(async () => { order.push('audit'); });
-  const fetchFn = jest.fn<any>(async () => { order.push('worker'); return Response.json(receipt); });
+  const auditFn = jest.fn<(...args: any[]) => any>(async () => { order.push('audit'); });
+  const fetchFn = jest.fn<(...args: any[]) => any>(async () => { order.push('worker'); return Response.json(receipt); });
   let enabled = true;
   registerCodeGenerationRoutes({ post: (_: string, ...handlers: RequestHandler[]) => { handler = handlers.at(-1)!; } } as Express,
     {} as never, ((_req, _res, next) => next()) as RequestHandler, { enabled: () => enabled, fetchFn, auditFn });

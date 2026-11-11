@@ -18,8 +18,8 @@ function fixture() {
       baseImage: 'sha256:' + 'e'.repeat(64), preparedImage: 'sha256:' + 'f'.repeat(64) },
     outputSha256: stackHash(['fixture', '']), finishedAt: new Date().toISOString() };
   const order: string[] = [];
-  const auditFn = jest.fn<any>(async () => { order.push('audit'); });
-  const fetchFn = jest.fn<any>(async () => { order.push('worker'); return Response.json(receipt); });
+  const auditFn = jest.fn<(...args: any[]) => any>(async () => { order.push('audit'); });
+  const fetchFn = jest.fn<(...args: any[]) => any>(async () => { order.push('worker'); return Response.json(receipt); });
   let enabled = true;
   registerStackTestsRoutes({ post: (_: string, ...handlers: RequestHandler[]) => { handler = handlers.at(-1)!; } } as Express,
     {} as never, ((_req, _res, next) => next()) as RequestHandler, { enabled: () => enabled, fetchFn, auditFn });

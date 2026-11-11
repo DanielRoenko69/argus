@@ -30,7 +30,6 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test-setup.ts',
     include: ['src/**/*.test.{ts,tsx}'],
-    minWorkers: 1,
     maxWorkers: 8,
     testTimeout: 15_000,
     hookTimeout: 15_000,

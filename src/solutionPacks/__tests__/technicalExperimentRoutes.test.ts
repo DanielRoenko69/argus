@@ -15,8 +15,8 @@ function fixture() {
       outputBytes: 32768, scriptBytes: 24000, snapshotBytes: 67108864, snapshotFiles: 3000 } };
   delete (receipt as Partial<typeof receipt>).script;
   const order: string[] = [];
-  const audit = jest.fn<any>(async () => { order.push('audit'); });
-  const fetchFn = jest.fn<any>(async () => { order.push('worker'); return Response.json(receipt); });
+  const audit = jest.fn<(...args: any[]) => any>(async () => { order.push('audit'); });
+  const fetchFn = jest.fn<(...args: any[]) => any>(async () => { order.push('worker'); return Response.json(receipt); });
   let enabled = true;
   registerTechnicalExperimentRoute({ post: (_path: string, ...h: RequestHandler[]) => { handler = h.at(-1)!; } } as Express,
     {} as never, ((_req, _res, next) => next()) as RequestHandler, { enabled: () => enabled, auditFn: audit, fetchFn });

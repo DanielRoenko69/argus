@@ -15,8 +15,8 @@ function fixture(environmentsEnabled = false) {
     stdout: 'fixture', stderr: '', durationMs: 1, passed: true, assertionFailed: false, collected: 1, nodes: ['test_seed.py::test_seed'],
     outputSha256: hash(['fixture', '']), finishedAt: new Date().toISOString() };
   const order: string[] = [];
-  const audit = jest.fn<any>(async () => { order.push('audit'); });
-  const fetchFn = jest.fn<any>(async () => { order.push('worker'); return Response.json(receipt); });
+  const audit = jest.fn<(...args: any[]) => any>(async () => { order.push('audit'); });
+  const fetchFn = jest.fn<(...args: any[]) => any>(async () => { order.push('worker'); return Response.json(receipt); });
   let enabled = true;
   registerQaTestsRoutes({ post: (_path: string, ...h: RequestHandler[]) => { handler = h.at(-1)!; } } as Express,
     {} as never, ((_req, _res, next) => next()) as RequestHandler, { enabled: () => enabled, environmentsEnabled: () => environmentsEnabled, auditFn: audit, fetchFn });

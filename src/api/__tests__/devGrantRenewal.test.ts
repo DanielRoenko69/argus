@@ -18,7 +18,7 @@ function fixture() {
     execution_principal: 'user:3', execution_bundle_ids: claims.bundleIds } },
     user: { role: 'developer', allowed_bundles: claims.bundleIds, entra_groups: ['team'] }, rules: [], agents: claims.coreAgents,
     bundles: claims.bundleIds.map(id => ({ id })) };
-  const query = jest.fn<any>().mockImplementation(async (sql: string, args: any[]) => {
+  const query = jest.fn<(...args: any[]) => any>().mockImplementation(async (sql: string, args: any[]) => {
     if (sql.includes('JOIN argus_langgraph_runs')) return { rows: state.thread ? [state.thread] : [] };
     if (sql.startsWith('SELECT * FROM argus_execution_grants')) return { rows: [stored] };
     if (sql.includes('FROM mcp_users')) return { rows: state.user ? [state.user] : [] };
@@ -29,8 +29,8 @@ function fixture() {
     return { rows: [] };
   });
   const client = { query, release: jest.fn() };
-  const pool = { connect: jest.fn<any>().mockResolvedValue(client) };
-  const audit = jest.fn<any>().mockResolvedValue({});
+  const pool = { connect: jest.fn<(...args: any[]) => any>().mockResolvedValue(client) };
+  const audit = jest.fn<(...args: any[]) => any>().mockResolvedValue({});
   const input = { grant: signExecutionGrant(secret, claims), threadId: claims.rootTraceId, runId: randomUUID() };
   const renew = () => renewDevGrant(pool as never, secret, input, audit);
   return { claims, stored, state, query, audit, input, renew, pool };
