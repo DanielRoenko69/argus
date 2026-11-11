@@ -1385,7 +1385,9 @@ function ArgusDevSolutionPackPage() {
   if (missingBundleCategories.length > 0) launchBlockers.push(`Missing Bundle capabilities: ${missingBundleCategories.map(category => BUNDLE_CAPABILITY_LABELS[category] ?? category).join(', ')}.`);
   if (missingSelectedBundles.length > 0) launchBlockers.push('Remove unavailable Bundles from the selection above.');
   if (!managedHermesBundleReady) launchBlockers.push('Select an operator-approved read-only Bundle for Managed Hermes.');
-  if (launchRoutingPreflight.isFetching) launchBlockers.push('Wait for the live runtime and execution-scope check.');
+  // The repository reaches the preflight after a short debounce; until then the
+  // visible route preview belongs to the previous value and must not unlock Start.
+  if (launchRoutingPreflight.isFetching || preflightRepository !== repositoryInput) launchBlockers.push('Wait for the live runtime and execution-scope check.');
   if ((launchRoutingPreflight.error as Error & { code?: string } | null)?.code === 'repository_checkout_conflict') launchBlockers.push('Select exactly one repository checkout Bundle.');
   if (launchOperationalIssues.length > 0) launchBlockers.push('Resolve the execution-scope connection issues shown above.');
   if (launchRoutingPreflight.data && !launchRoutingReadiness.ready) launchBlockers.push('Resolve the runtime readiness error shown above.');
