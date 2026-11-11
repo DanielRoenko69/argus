@@ -6,9 +6,9 @@
 # Then start the normal external Pack stack with the generated, git-ignored
 # environment file:
 #   docker compose --env-file .env --env-file .env.hermes-managed.local \
-#     -f docker-compose.yml -f compose.external-pack.yml \
-#     -f compose.hermes-attached.yml -f compose.hermes-local.yml \
-#     -f compose.hermes-managed.yml up -d
+#     -f docker-compose.yml -f deploy/compose/packs/compose.external-pack.yml \
+#     -f deploy/compose/packs/compose.hermes-attached.yml -f deploy/compose/packs/compose.hermes-local.yml \
+#     -f deploy/compose/packs/compose.hermes-managed.yml up -d
 #
 # The Docker socket is mounted only into runnerd. Core and the Pack never
 # receive container-engine authority, and spawned Hermes/proxy containers use

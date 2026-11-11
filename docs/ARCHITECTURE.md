@@ -67,7 +67,7 @@ containers that Core discovers, authorizes and observes.
 | `agent-workspace/` | Internal sandbox service for repository, shell and subscription-runtime work |
 | `db/migrations/` | Append-only numbered SQL migrations, applied at Core start |
 | `docker-compose.yml` | Core stack: PostgreSQL, Redis, Core, agent-workspace, optional services |
-| `compose.external-pack.yml` | Overlay that adds the Solution Pack containers |
+| `deploy/compose/packs/compose.external-pack.yml` | Overlay that adds the Solution Pack containers |
 | `packs/argus-dev/` | Development workflows (LangGraph state machines) |
 | `packs/argus-aiops/` | Evidence-first incident investigation |
 | `packs/argus-hermes/` | Hermes runtime bridge (attached and managed modes) |
@@ -100,11 +100,11 @@ tests it needs; Core decides whether and how those are satisfied.
 Optional Compose profiles add a local LLM gateway (`llm-gateway`, `local-llm`),
 a local Gitea lab (`dev-demo`) and a Presidio PII analyzer (`pii`).
 
-`compose.external-pack.yml` adds `argus-dev`, `argus-aiops` and `argus-hermes`,
+`deploy/compose/packs/compose.external-pack.yml` adds `argus-dev`, `argus-aiops` and `argus-hermes`,
 sets `ARGUS_SOLUTION_PACK_ENDPOINTS` to their internal URLs and mounts the
 Hermes discovery token as a read-only Docker secret. Build the pack images from
 `packs/*` first, then run
-`docker compose -f docker-compose.yml -f compose.external-pack.yml up -d`.
+`docker compose -f docker-compose.yml -f deploy/compose/packs/compose.external-pack.yml up -d`.
 
 ## 5. Request lifecycle: agent chat
 

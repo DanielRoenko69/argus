@@ -243,7 +243,7 @@ Relevant endpoints are:
 Core remains fail-closed unless Evidence v1 and a signing key are configured.
 The one-command Docker installer generates a machine-local Ed25519 key and
 enables the report path; manual Compose installations opt in through
-`compose.audit-evidence.yml`.
+`deploy/compose/options/compose.audit-evidence.yml`.
 
 ## H8 external trust-anchor contract
 
@@ -331,7 +331,7 @@ for a plan plus idempotency key so a provider success followed by a database
 rollback can be retried safely. `archive_verified` still sets
 `purgeAuthorized: false`: no delete function or purge endpoint exists in H10.
 
-`compose.worm-demo.yml` is the executable local reference for this boundary.
+`deploy/compose/demo/compose.worm-demo.yml` is the executable local reference for this boundary.
 Its gateway accepts only complete canonical Evidence Pack or retention-archive
 payloads, verifies byte count and SHA-256, writes them to a versioned MinIO
 bucket with `COMPLIANCE` Object Lock and reads the stored retention metadata

@@ -14,14 +14,16 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const projectName = 'argus-e2e';
-const composeFile = 'compose.e2e.yml';
-const composePrefix = ['compose', '-p', projectName, '-f', composeFile];
+const composeFile = 'deploy/compose/e2e/compose.e2e.yml';
+// The E2E stack is the first Compose file, so pin the project directory to the
+// repository root: relative paths and .env resolve exactly as before the move.
+const composePrefix = ['compose', '-p', projectName, '--project-directory', root, '-f', composeFile];
 const haProjectName = 'argus-ha';
 const haComposePrefix = [
-  'compose', '-p', haProjectName,
+  'compose', '-p', haProjectName, '--project-directory', root,
   '-f', composeFile,
-  '-f', 'compose.ha.e2e.yml',
-  '-f', 'compose.ha.browser.e2e.yml',
+  '-f', 'deploy/compose/e2e/compose.ha.e2e.yml',
+  '-f', 'deploy/compose/e2e/compose.ha.browser.e2e.yml',
 ];
 let cleanupInProgress = false;
 let haCleanupInProgress = false;

@@ -10,10 +10,10 @@ const root = resolve(import.meta.dirname, '..');
 const attestationPath = resolve(root, 'secrets', 'argus-hermes-docker-attestation.json');
 const composeBaseArgs = [
   'compose', '--env-file', '.env', '--env-file', '.env.hermes-managed.local',
-  '-f', 'docker-compose.yml', '-f', 'compose.external-pack.yml',
-  '-f', 'compose.hermes-attached.yml', '-f', 'compose.hermes-local.yml',
+  '-f', 'docker-compose.yml', '-f', 'deploy/compose/packs/compose.external-pack.yml',
+  '-f', 'deploy/compose/packs/compose.hermes-attached.yml', '-f', 'deploy/compose/packs/compose.hermes-local.yml',
 ];
-const composeManagedArgs = [...composeBaseArgs, '-f', 'compose.hermes-managed.yml'];
+const composeManagedArgs = [...composeBaseArgs, '-f', 'deploy/compose/packs/compose.hermes-managed.yml'];
 
 function option(name) {
   const index = process.argv.indexOf(name);

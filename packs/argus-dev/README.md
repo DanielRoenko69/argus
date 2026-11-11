@@ -212,7 +212,7 @@ Or manually from the repository root:
 
 ```powershell
 docker build -t argus-dev:local packs/argus-dev
-docker compose -f docker-compose.yml -f compose.external-pack.yml up -d --build --wait
+docker compose -f docker-compose.yml -f deploy/compose/packs/compose.external-pack.yml up -d --build --wait
 ```
 
 Open <http://localhost:3000/solutions/argus.dev>. Core discovers the Pack at

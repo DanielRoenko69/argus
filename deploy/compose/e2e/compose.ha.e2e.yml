@@ -1,11 +1,11 @@
 # Multi-replica overlay for the deterministic E2E stack.
 #
 # Usage:
-#   docker compose -p argus-ha -f compose.e2e.yml -f compose.ha.e2e.yml \
+#   docker compose -p argus-ha --project-directory . -f deploy/compose/e2e/compose.e2e.yml -f deploy/compose/e2e/compose.ha.e2e.yml \
 #     up --build --detach postgres redis fake-openai fake-anthropic fake-mcp fake-workspace callback-capture keycloak argus-a argus-b
 #
 # Both replicas share the same PostgreSQL/Redis and security material inherited
-# from compose.e2e.yml. They intentionally expose different host ports so the
+# from deploy/compose/e2e/compose.e2e.yml. They intentionally expose different host ports so the
 # continuity script can move one session between replicas without a gateway.
 
 x-argus-environment: &argus-environment

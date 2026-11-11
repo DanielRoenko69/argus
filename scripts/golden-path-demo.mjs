@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const project = 'argus-golden-path-demo';
-const compose = ['compose', '-p', project, '-f', 'compose.e2e.yml', '-f', 'compose.golden-path.e2e.yml'];
+const compose = ['compose', '-p', project, '--project-directory', root, '-f', 'deploy/compose/e2e/compose.e2e.yml', '-f', 'deploy/compose/e2e/compose.golden-path.e2e.yml'];
 const statePath = resolve(root, 'e2e', 'test-results', 'golden-path-restart-state.json');
 const publicOrigin = `http://127.0.0.1:${process.env.ARGUS_E2E_PORT ?? '3100'}`;
 

@@ -10,8 +10,8 @@ $incidentManifest = Join-Path $repoRoot 'demo\aiops\kubernetes\incident-workload
 $context = "kind-$ClusterName"
 $composeFiles = @(
   '-f', 'docker-compose.yml',
-  '-f', 'compose.external-pack.yml',
-  '-f', 'compose.aiops-demo.yml',
+  '-f', 'deploy/compose/packs/compose.external-pack.yml',
+  '-f', 'deploy/compose/demo/compose.aiops-demo.yml',
   '--profile', 'aiops-demo'
 )
 

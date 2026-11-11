@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const seed = await readFile(resolve('src/scripts/seedBackendSsoDemo.ts'), 'utf8');
-const compose = await readFile(resolve('compose.backend-sso-demo.yml'), 'utf8');
+const compose = await readFile(resolve('deploy/compose/demo/compose.backend-sso-demo.yml'), 'utf8');
 const jenkinsInit = await readFile(resolve('demo/backend-sso/jenkins/init.groovy.d/10-argus-production-proof.groovy'), 'utf8');
 const demoRunner = await readFile(resolve('scripts/backend-sso-demo.mjs'), 'utf8');
 

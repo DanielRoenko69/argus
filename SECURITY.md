@@ -75,8 +75,8 @@ These are tracked and not yet resolved:
 
 ## Demo and test credentials
 
-The demo and test Compose files (`compose.*-demo.yml`, `compose.e2e.yml`,
-`compose.ha.e2e.yml`, `compose.mfa-demo.yml`), the local Keycloak realms under
+The demo and test Compose files (`compose.*-demo.yml`, `deploy/compose/e2e/compose.e2e.yml`,
+`deploy/compose/e2e/compose.ha.e2e.yml`, `deploy/compose/demo/compose.mfa-demo.yml`), the local Keycloak realms under
 `e2e/keycloak/` and the configuration under `demo/` contain **fixed, publicly
 known credentials** (passwords, client secrets, service tokens, TOTP seeds) for
 disposable local stacks. They are not secrets. Never expose these stacks to a

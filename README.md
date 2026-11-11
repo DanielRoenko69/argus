@@ -146,12 +146,12 @@ docker compose up -d --build mcp-server
 docker build -t argus-dev:local packs/argus-dev
 docker build -t argus-aiops:local packs/argus-aiops
 docker build -t argus-hermes:local packs/argus-hermes
-docker compose -f docker-compose.yml -f compose.external-pack.yml \
-  -f compose.hermes-attached.yml -f compose.hermes-local.yml up -d --build
+docker compose -f docker-compose.yml -f deploy/compose/packs/compose.external-pack.yml \
+  -f deploy/compose/packs/compose.hermes-attached.yml -f deploy/compose/packs/compose.hermes-local.yml up -d --build
 ```
 
 Signed audit evidence needs a local Ed25519 key (`npm run setup:audit-signing-key`)
-and the `compose.audit-evidence.yml` overlay; the Docker installer does this for
+and the `deploy/compose/options/compose.audit-evidence.yml` overlay; the Docker installer does this for
 you. See [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 ### Option 3 — Development from source
@@ -179,7 +179,7 @@ docker compose stop            # stop containers
 docker compose down            # remove containers, keep data
 ```
 
-For the pack profiles add the same `-f compose.external-pack.yml …` files.
+For the pack profiles add the same `-f deploy/compose/packs/compose.external-pack.yml …` files.
 `docker compose down --volumes` also deletes all data.
 
 ## Architecture

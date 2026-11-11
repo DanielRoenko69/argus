@@ -117,7 +117,7 @@ test('Argus keeps remediation tools outside the read-only Agent bundle', () => {
 });
 
 test('Core reaches the connector only over the private Kind Docker network', async () => {
-  const compose = await readFile(resolve('compose.aiops-demo.yml'), 'utf8');
+  const compose = await readFile(resolve('deploy/compose/demo/compose.aiops-demo.yml'), 'utf8');
   assert.match(coreCompose, /argus-aiops-control-plane/);
   assert.match(compose, /argus-kind:[\s\S]*external:\s*true[\s\S]*name:\s*kind/);
   assert.doesNotMatch(seed, /host\.docker\.internal:18085/);

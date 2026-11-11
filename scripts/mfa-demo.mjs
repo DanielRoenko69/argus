@@ -28,13 +28,13 @@ if (existsSync(resolve(root, '.env.worm-demo.local'))) {
   baseCompose.push(
     '--env-file', '.env.worm-demo.local',
     '-f', 'docker-compose.yml',
-    '-f', 'compose.audit-evidence.yml',
-    '-f', 'compose.worm-demo.yml',
+    '-f', 'deploy/compose/options/compose.audit-evidence.yml',
+    '-f', 'deploy/compose/demo/compose.worm-demo.yml',
   );
 } else {
   baseCompose.push('-f', 'docker-compose.yml');
 }
-const mfaCompose = [...baseCompose, '-f', 'compose.mfa-demo.yml'];
+const mfaCompose = [...baseCompose, '-f', 'deploy/compose/demo/compose.mfa-demo.yml'];
 const port = process.env.ARGUS_MFA_DEMO_PORT ?? '8180';
 const argusPort = process.env.PORT ?? '3000';
 const issuer = `http://localhost:${port}/realms/${LOCAL_MFA_DEMO.realm}`;
