@@ -128,7 +128,7 @@ if (dockerVersion.status === 0) {
 const envFile = resolve(root, '.env');
 const environment = readEnv(envFile);
 if (!existsSync(envFile)) {
-  fail('.env', 'run sh ./setup.sh on macOS; do not copy workstation secrets through Git');
+  fail('.env', 'run the Docker installer (docker compose -f compose.install.yml run --rm install); do not copy secrets through Git');
 } else {
   pass('.env', 'present');
   for (const key of ['SESSION_SECRET', 'DB_ENCRYPTION_KEY', 'POSTGRES_PASSWORD', 'MCP_API_KEYS', 'WORKSPACE_SECRET']) {

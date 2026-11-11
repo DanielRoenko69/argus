@@ -56,7 +56,7 @@ and verify traces before enabling write-capable tools.
 
 The installer container receives `/var/run/docker.sock` for this one run, so
 it temporarily controls the local Docker engine. Its implementation is small
-and reviewable: `compose.install.yml`, `docker/installer.Dockerfile`,
+and reviewable: `compose.install.yml`, `deploy/installer/Dockerfile`,
 `scripts/docker-install.sh`, `deploy/compose/installer/compose.installer-hostpaths.yml`,
 `deploy/compose/installer/compose.installer-audit.yml`. Never run the installer service in production
 or expose the Docker socket to an application container.
