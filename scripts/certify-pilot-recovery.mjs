@@ -15,7 +15,7 @@ import {
 const { Pool } = pg;
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const project = 'argus-pilot-recovery';
-const compose = ['compose', '-p', project, '-f', 'compose.pilot-recovery.yml'];
+const compose = ['compose', '-p', project, '--project-directory', root, '-f', 'deploy/compose/pilot/compose.pilot-recovery.yml'];
 const sourcePort = Number(process.env.ARGUS_PILOT_SOURCE_DB_PORT || 55439);
 const restorePort = Number(process.env.ARGUS_PILOT_RESTORE_DB_PORT || 55440);
 const sourceUrl = `postgresql://argus_recovery:argus_recovery_local_only@127.0.0.1:${sourcePort}/argus_source`;
@@ -68,7 +68,7 @@ function cleanup() {
 }
 
 async function configInventory() {
-  const paths = ['docker-compose.yml', 'compose.pilot-recovery.yml', 'package-lock.json'];
+  const paths = ['docker-compose.yml', 'deploy/compose/pilot/compose.pilot-recovery.yml', 'package-lock.json'];
   return Promise.all(paths.map(async path => ({
     path,
     sha256: recoverySha256(await readFile(resolve(root, path))),

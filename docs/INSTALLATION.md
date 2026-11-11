@@ -57,8 +57,8 @@ and verify traces before enabling write-capable tools.
 The installer container receives `/var/run/docker.sock` for this one run, so
 it temporarily controls the local Docker engine. Its implementation is small
 and reviewable: `compose.install.yml`, `docker/installer.Dockerfile`,
-`scripts/docker-install.sh`, `compose.installer-hostpaths.yml`,
-`compose.installer-audit.yml`. Never run the installer service in production
+`scripts/docker-install.sh`, `deploy/compose/installer/compose.installer-hostpaths.yml`,
+`deploy/compose/installer/compose.installer-audit.yml`. Never run the installer service in production
 or expose the Docker socket to an application container.
 
 Useful options:
@@ -124,7 +124,7 @@ key (never commit it):
 
 ```bash
 npm run setup:audit-signing-key
-docker compose -f docker-compose.yml -f compose.audit-evidence.yml up -d --build mcp-server
+docker compose -f docker-compose.yml -f deploy/compose/options/compose.audit-evidence.yml up -d --build mcp-server
 ```
 
 Reports, checkpoints and restore records are evidence support, not a legal
@@ -154,7 +154,7 @@ docker compose down      # remove containers, keep data volumes
 For `optimal`/`everything`, repeat the Solution Pack overlay files:
 
 ```bash
-docker compose -f docker-compose.yml -f compose.external-pack.yml -f compose.hermes-attached.yml -f compose.hermes-local.yml stop
+docker compose -f docker-compose.yml -f deploy/compose/packs/compose.external-pack.yml -f deploy/compose/packs/compose.hermes-attached.yml -f deploy/compose/packs/compose.hermes-local.yml stop
 ```
 
 `docker compose down --volumes` also deletes the database and all local
@@ -168,7 +168,7 @@ state. Only use it when you really want a clean slate.
   another Argus stack first.
 - **Core is unhealthy** — `docker compose logs --tail 200 mcp-server`.
 - **A Solution Pack is missing in the Console** — check that its container is
-  healthy (`docker compose -f docker-compose.yml -f compose.external-pack.yml ps`)
+  healthy (`docker compose -f docker-compose.yml -f deploy/compose/packs/compose.external-pack.yml ps`)
   and that `ARGUS_SOLUTION_PACK_ENDPOINTS` lists it.
 
 ## Security notes

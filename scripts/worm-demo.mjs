@@ -17,7 +17,7 @@ run(process.execPath, [resolve(root, 'scripts/setup-worm-demo.mjs')]);
 run(process.execPath, [resolve(root, 'scripts/ensure-audit-signing-key.mjs')]);
 const compose = [
   'compose', '--env-file', '.env', '--env-file', '.env.worm-demo.local',
-  '-f', 'docker-compose.yml', '-f', 'compose.audit-evidence.yml', '-f', 'compose.worm-demo.yml',
+  '-f', 'docker-compose.yml', '-f', 'deploy/compose/options/compose.audit-evidence.yml', '-f', 'deploy/compose/demo/compose.worm-demo.yml',
 ];
 if (action === 'stop') {
   run('docker', [...compose, 'stop', 'worm-gateway', 'worm-minio']);

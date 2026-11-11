@@ -4,7 +4,7 @@ import test from 'node:test';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
-const overlay = await readFile(resolve(root, 'compose.golden-path.e2e.yml'), 'utf8');
+const overlay = await readFile(resolve(root, 'deploy/compose/e2e/compose.golden-path.e2e.yml'), 'utf8');
 
 test('Golden Path transfers its host key into a disposable least-readable volume', () => {
   assert.match(overlay, /audit-signing-key-init:/u);

@@ -65,7 +65,7 @@ compose() {
   # A targeted Core recreate must retain an already installed local MFA lab.
   # Fresh installations without that opt-in container keep their normal IdP.
   if [ -n "$(docker ps -aq --filter label=com.docker.compose.project=argus-core --filter label=com.docker.compose.service=keycloak-mfa)" ]; then
-    set -- -f "$ROOT_DIR/compose.mfa-demo.yml" "$@"
+    set -- -f "$ROOT_DIR/deploy/compose/demo/compose.mfa-demo.yml" "$@"
   fi
   if [ "$(read_env ARGUS_AUDIT_SIGNING_PRIVATE_KEY_FILE)" = /run/secrets/audit/argus-audit-signing-key.pem ]; then
     docker compose \
@@ -73,10 +73,10 @@ compose() {
       --project-directory "$ROOT_DIR" \
       --env-file "$ROOT_DIR/.env" \
       -f "$ROOT_DIR/docker-compose.yml" \
-      -f "$ROOT_DIR/compose.external-pack.yml" \
-      -f "$ROOT_DIR/compose.hermes-attached.yml" \
-      -f "$ROOT_DIR/compose.hermes-local.yml" \
-      -f "$ROOT_DIR/compose.installer-audit.yml" \
+      -f "$ROOT_DIR/deploy/compose/packs/compose.external-pack.yml" \
+      -f "$ROOT_DIR/deploy/compose/packs/compose.hermes-attached.yml" \
+      -f "$ROOT_DIR/deploy/compose/packs/compose.hermes-local.yml" \
+      -f "$ROOT_DIR/deploy/compose/installer/compose.installer-audit.yml" \
       --profile dev-demo "$@"
   else
     docker compose \
@@ -84,9 +84,9 @@ compose() {
       --project-directory "$ROOT_DIR" \
       --env-file "$ROOT_DIR/.env" \
       -f "$ROOT_DIR/docker-compose.yml" \
-      -f "$ROOT_DIR/compose.external-pack.yml" \
-      -f "$ROOT_DIR/compose.hermes-attached.yml" \
-      -f "$ROOT_DIR/compose.hermes-local.yml" \
+      -f "$ROOT_DIR/deploy/compose/packs/compose.external-pack.yml" \
+      -f "$ROOT_DIR/deploy/compose/packs/compose.hermes-attached.yml" \
+      -f "$ROOT_DIR/deploy/compose/packs/compose.hermes-local.yml" \
       --profile dev-demo "$@"
   fi
 }

@@ -133,7 +133,7 @@ set_env LLM_REQUEST_TIMEOUT_MS 300000
 # cross-session memory after its local embedding endpoint is ready.
 set_env ARGUS_AGENT_MEMORY_AUTO_ENABLED false
 
-BASE_FILES="-f $CORE_DIR/docker-compose.yml -f $CORE_DIR/compose.installer-hostpaths.yml -f $CORE_DIR/compose.installer-audit.yml"
+BASE_FILES="-f $CORE_DIR/docker-compose.yml -f $CORE_DIR/deploy/compose/installer/compose.installer-hostpaths.yml -f $CORE_DIR/deploy/compose/installer/compose.installer-audit.yml"
 STACK_FILES="$BASE_FILES"
 
 if [ "$MODE" != minimal ]; then
@@ -175,7 +175,7 @@ if [ "$MODE" != minimal ]; then
     docker build -t argus-hermes:local "$CORE_DIR/packs/argus-hermes"
   fi
 
-  STACK_FILES="$BASE_FILES -f $CORE_DIR/compose.external-pack.yml -f $CORE_DIR/compose.hermes-attached.yml -f $CORE_DIR/compose.hermes-local.yml -f $CORE_DIR/compose.installer-secrets.yml"
+  STACK_FILES="$BASE_FILES -f $CORE_DIR/deploy/compose/packs/compose.external-pack.yml -f $CORE_DIR/deploy/compose/packs/compose.hermes-attached.yml -f $CORE_DIR/deploy/compose/packs/compose.hermes-local.yml -f $CORE_DIR/deploy/compose/installer/compose.installer-secrets.yml"
 fi
 
 # Intentional word splitting: STACK_FILES is a controlled list of repository

@@ -137,7 +137,7 @@ When rebuilding Core manually, keep the overlay active so the private route is
 retained:
 
 ```powershell
-docker compose -f docker-compose.yml -f compose.aiops-demo.yml up -d --build mcp-server
+docker compose -f docker-compose.yml -f deploy/compose/demo/compose.aiops-demo.yml up -d --build mcp-server
 ```
 
 After a verified change, Core schedules a persistent post-change read. Drift

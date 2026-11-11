@@ -207,7 +207,7 @@ else {
 
 $compose = @('compose')
 if ($UseGpu) {
-  $compose += @('-f', 'docker-compose.yml', '-f', 'compose.gpu.yml')
+  $compose += @('-f', 'docker-compose.yml', '-f', 'deploy/compose/options/compose.gpu.yml')
 }
 $compose += @('--profile', 'llm-gateway')
 if (-not $UseNativeOllama) {

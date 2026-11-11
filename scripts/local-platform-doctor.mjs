@@ -159,7 +159,7 @@ if (full) {
   checkSecretFile(environment, 'ARGUS_HERMES_API_KEY_SOURCE_FILE', true);
   if (existsSync(envFile) && composeVersion.status === 0) {
     checkCompose(
-      ['docker-compose.yml', 'compose.external-pack.yml', 'compose.hermes-attached.yml', 'compose.hermes-local.yml'],
+      ['docker-compose.yml', 'deploy/compose/packs/compose.external-pack.yml', 'deploy/compose/packs/compose.hermes-attached.yml', 'deploy/compose/packs/compose.hermes-local.yml'],
       ['.env'],
       'External Pack stack',
     );
@@ -204,7 +204,7 @@ if (managedHermes) {
   }
   if (existsSync(envFile) && existsSync(managedEnvFile) && composeVersion.status === 0) {
     checkCompose(
-      ['docker-compose.yml', 'compose.external-pack.yml', 'compose.hermes-attached.yml', 'compose.hermes-local.yml', 'compose.hermes-managed.yml'],
+      ['docker-compose.yml', 'deploy/compose/packs/compose.external-pack.yml', 'deploy/compose/packs/compose.hermes-attached.yml', 'deploy/compose/packs/compose.hermes-local.yml', 'deploy/compose/packs/compose.hermes-managed.yml'],
       ['.env', '.env.hermes-managed.local'],
       'Managed Hermes stack',
     );

@@ -253,7 +253,7 @@ test('fresh Argus install certifies auth, LLM, agent, public widget, RAG, connec
 
   // Certify the native Public Widget administration and the real anonymous
   // runtime in the disposable E2E world. Production remains fail-closed by
-  // default; compose.e2e.yml opts in explicitly for this security boundary.
+  // default; deploy/compose/e2e/compose.e2e.yml opts in explicitly for this security boundary.
   await admin.goto('/build/public-widgets');
   await expect(admin.getByRole('heading', { name: 'Public channels', exact: true })).toBeVisible();
   await admin.getByRole('button', { name: 'Create widget' }).click();

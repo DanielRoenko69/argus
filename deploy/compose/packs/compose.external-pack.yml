@@ -5,7 +5,7 @@
 #   docker build -t argus-aiops:local ./packs/argus-aiops
 #   docker build -t argus-hermes:local ./packs/argus-hermes
 # Then start the Core stack with:
-#   docker compose -f docker-compose.yml -f compose.external-pack.yml up -d
+#   docker compose -f docker-compose.yml -f deploy/compose/packs/compose.external-pack.yml up -d
 
 services:
   # The base Compose file keeps the in-repo runtime for backwards-compatible
@@ -166,7 +166,7 @@ services:
       mcp-server:
         condition: service_healthy
 
-# Required only by compose.external-pack.yml. The source file is local to the
+# Required only by deploy/compose/packs/compose.external-pack.yml. The source file is local to the
 # operator and ignored by Git; Docker exposes it to exactly the two services
 # above at /run/secrets/argus-hermes-discovery-token.
 secrets:

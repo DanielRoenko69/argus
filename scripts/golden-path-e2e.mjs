@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const project = 'argus-golden-path-e2e';
-const compose = ['compose', '-p', project, '-f', 'compose.e2e.yml', '-f', 'compose.golden-path.e2e.yml'];
+const compose = ['compose', '-p', project, '--project-directory', root, '-f', 'deploy/compose/e2e/compose.e2e.yml', '-f', 'deploy/compose/e2e/compose.golden-path.e2e.yml'];
 const reportPath = resolve(root, 'test-results', 'golden-path-certification.json');
 const checks = [];
 let cleanupStarted = false;

@@ -409,8 +409,8 @@ docker compose -f compose.install.yml run --rm --build install optimal
 
 The `optimal` and `everything` profiles build the three pack images from
 `packs/`, generate the Hermes discovery token and API key under the git-ignored
-`secrets/` directory, and start Core with `compose.external-pack.yml`,
-`compose.hermes-attached.yml` and `compose.hermes-local.yml` (a local Hermes
+`secrets/` directory, and start Core with `deploy/compose/packs/compose.external-pack.yml`,
+`deploy/compose/packs/compose.hermes-attached.yml` and `deploy/compose/packs/compose.hermes-local.yml` (a local Hermes
 upstream). `everything` additionally starts local Ollama/LiteLLM model serving
 and further optional profiles. `minimal` starts Core, PostgreSQL and Redis
 without packs. See [docs/INSTALLATION.md](INSTALLATION.md).
@@ -426,14 +426,14 @@ mkdir -p secrets
 openssl rand -hex 32 > secrets/argus-hermes-discovery-token
 # .env: ARGUS_HERMES_DISCOVERY_TOKEN_FILE=./secrets/argus-hermes-discovery-token
 
-docker compose -f docker-compose.yml -f compose.external-pack.yml up -d --wait
+docker compose -f docker-compose.yml -f deploy/compose/packs/compose.external-pack.yml up -d --wait
 ```
 
 Each pack Dockerfile runs the pack's tests and build in a builder stage and
 produces an unprivileged Node.js runtime image. Image names can be overridden
 with `ARGUS_DEV_IMAGE`, `ARGUS_AIOPS_IMAGE` and `ARGUS_HERMES_IMAGE`.
 
-About `compose.external-pack.yml`:
+About `deploy/compose/packs/compose.external-pack.yml`:
 
 - It points Core at the three packs; Core's `LANGGRAPH_URL` targets the
   `argus-dev` container, so Argus Dev owns the LangGraph service identity.
@@ -448,14 +448,14 @@ About `compose.external-pack.yml`:
   configured endpoint, otherwise Core rejects the agent card.
 - Managed Hermes variables default to empty, so managed runs stay disabled.
 
-To attach an existing Hermes service, add `compose.hermes-attached.yml` with a
+To attach an existing Hermes service, add `deploy/compose/packs/compose.hermes-attached.yml` with a
 separate API key file. Never reuse the discovery token as the Hermes API key:
 
 ```bash
 export HERMES_BASE_URL=http://host.docker.internal:8000
 export ARGUS_HERMES_API_KEY_SOURCE_FILE=./secrets/hermes-api-key
-docker compose -f docker-compose.yml -f compose.external-pack.yml \
-  -f compose.hermes-attached.yml up -d --build --wait
+docker compose -f docker-compose.yml -f deploy/compose/packs/compose.external-pack.yml \
+  -f deploy/compose/packs/compose.hermes-attached.yml up -d --build --wait
 ```
 
 `HERMES_BASE_URL` must be reachable from the pack container; for a service on

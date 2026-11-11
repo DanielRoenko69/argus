@@ -148,7 +148,7 @@ npm run start:runnerd
 
 It exposes only authenticated `GET /v1/ready`, `POST /v1/runs`, `GET
 /v1/runs/<id>`, and `POST /v1/runs/<id>/cancel` (plus unauthenticated
-`/healthz`). Core owns the local `compose.hermes-managed.yml` overlay plus the
+`/healthz`). Core owns the local `deploy/compose/packs/compose.hermes-managed.yml` overlay plus the
 setup/certification scripts. They pin repository-qualified immutable digests,
 copy only Hermes `.env`/`auth.json` into a separate protected managed profile,
 and approve one explicit read-only Bundle ID.

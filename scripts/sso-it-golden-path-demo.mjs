@@ -17,18 +17,18 @@ function composeArguments() {
   if (existsSync(resolve(root, '.env.worm-demo.local'))) args.push('--env-file', '.env.worm-demo.local');
   args.push('-f', 'docker-compose.yml');
   for (const file of [
-    'compose.external-pack.yml',
-    'compose.hermes-attached.yml',
-    'compose.hermes-local.yml',
-    'compose.aiops-demo.yml',
-    'compose.backend-sso-demo.yml',
+    'deploy/compose/packs/compose.external-pack.yml',
+    'deploy/compose/packs/compose.hermes-attached.yml',
+    'deploy/compose/packs/compose.hermes-local.yml',
+    'deploy/compose/demo/compose.aiops-demo.yml',
+    'deploy/compose/demo/compose.backend-sso-demo.yml',
   ]) {
     if (existsSync(resolve(root, file))) args.push('-f', file);
   }
   if (existsSync(resolve(root, '.env.worm-demo.local'))) {
-    args.push('-f', 'compose.audit-evidence.yml', '-f', 'compose.worm-demo.yml');
+    args.push('-f', 'deploy/compose/options/compose.audit-evidence.yml', '-f', 'deploy/compose/demo/compose.worm-demo.yml');
   }
-  args.push('-f', 'compose.mfa-demo.yml', '--profile', 'aiops-demo', '--profile', 'backend-sso-demo');
+  args.push('-f', 'deploy/compose/demo/compose.mfa-demo.yml', '--profile', 'aiops-demo', '--profile', 'backend-sso-demo');
   return args;
 }
 

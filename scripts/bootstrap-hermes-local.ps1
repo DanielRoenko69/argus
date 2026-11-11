@@ -59,9 +59,9 @@ if (-not $SkipBuild) {
 $compose = @(
   'compose',
   '-f', 'docker-compose.yml',
-  '-f', 'compose.external-pack.yml',
-  '-f', 'compose.hermes-attached.yml',
-  '-f', 'compose.hermes-local.yml'
+  '-f', 'deploy/compose/packs/compose.external-pack.yml',
+  '-f', 'deploy/compose/packs/compose.hermes-attached.yml',
+  '-f', 'deploy/compose/packs/compose.hermes-local.yml'
 )
 
 Write-Host '[hermes] Starting Core, the runtime Pack and the provider-neutral Hermes upstream...'
@@ -90,6 +90,6 @@ if ($PreserveNativeHermesTools) {
   Write-Host '[hermes] Hermes-native API tools are disabled for the attached-mode certification profile.'
 }
 Write-Host '[hermes] Add a Codex subscription with:'
-Write-Host '  docker compose -f docker-compose.yml -f compose.external-pack.yml -f compose.hermes-attached.yml -f compose.hermes-local.yml exec hermes-upstream hermes auth add openai-codex --type oauth --no-browser'
+Write-Host '  docker compose -f docker-compose.yml -f deploy/compose/packs/compose.external-pack.yml -f deploy/compose/packs/compose.hermes-attached.yml -f deploy/compose/packs/compose.hermes-local.yml exec hermes-upstream hermes auth add openai-codex --type oauth --no-browser'
 Write-Host '[hermes] Then select its default model with:'
-Write-Host '  docker compose -f docker-compose.yml -f compose.external-pack.yml -f compose.hermes-attached.yml -f compose.hermes-local.yml exec hermes-upstream hermes model --no-browser'
+Write-Host '  docker compose -f docker-compose.yml -f deploy/compose/packs/compose.external-pack.yml -f deploy/compose/packs/compose.hermes-attached.yml -f deploy/compose/packs/compose.hermes-local.yml exec hermes-upstream hermes model --no-browser'

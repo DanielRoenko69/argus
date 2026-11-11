@@ -248,7 +248,7 @@ services:
     volumes:
       - ./e2e:/work/e2e
     # The focused Golden Path certification owns a separate, freshly signed
-    # Compose lifecycle (compose.golden-path.e2e.yml). Keep it out of this
+    # Compose lifecycle (deploy/compose/e2e/compose.golden-path.e2e.yml). Keep it out of this
     # shared product/restart journey so both gates retain a real first-install
     # boundary and cannot consume each other's first-admin bootstrap.
     command: ["sh", "-c", "npm ci --no-audit --no-fund && npx playwright test tests/golden-path.spec.ts tests/restart-recovery.spec.ts"]
